@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+httpx
+supabase
+openai
+llama-parse
+langsmith
+spacy
+python-dotenv
+pydantic
+pydantic-settings
+numpy

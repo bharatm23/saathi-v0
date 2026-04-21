@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0F2D52;
+  --blue: #1A56A0;
+  --teal: #0E7C7B;
+  --amber: #A85C00;
+  --red: #A8001E;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F9FAFB;
+  color: #111827;
+}
+
+.prose-saathi { color: #374151; font-size: 14px; line-height: 1.6; }
+.prose-saathi > * + * { margin-top: 12px; }
+.prose-saathi h1, .prose-saathi h2 { color: #0F2D52; font-size: 16px; font-weight: 600; margin-top: 20px; }
+.prose-saathi h3 { color: #0F2D52; font-size: 14px; font-weight: 600; margin-top: 16px; }
+.prose-saathi ul { list-style: disc; padding-left: 20px; }
+.prose-saathi ol { list-style: decimal; padding-left: 20px; }
+.prose-saathi li + li { margin-top: 4px; }
+.prose-saathi strong { color: #111827; font-weight: 600; }
+.prose-saathi blockquote { border-left: 4px solid #0F2D52; background: rgba(15,45,82,0.04); padding: 8px 12px; border-radius: 4px; }
+.prose-saathi blockquote.positive { border-color: #0E7C7B; background: rgba(14,124,123,0.06); }
+.prose-saathi blockquote.caution { border-color: #A85C00; background: rgba(168,92,0,0.06); }
