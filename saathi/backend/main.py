@@ -26,9 +26,21 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],   # POC only — lock this down in Phase 1
+#     allow_credentials=False,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # POC only — lock this down in Phase 1
+    allow_origins=[
+        "http://localhost:3001",
+        "https://your-app.vercel.app",  # add your actual Vercel URL
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
