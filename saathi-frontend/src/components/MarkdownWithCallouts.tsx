@@ -47,7 +47,6 @@ function stripMarker(children: React.ReactNode): React.ReactNode {
         const newChildren = el.props.children.map((c: React.ReactNode) =>
           typeof c === "string" ? c.replace(/\[!(positive|caution|info)\]\s*/g, "") : c
         );
-        // @ts-expect-error — clone with modified children
         return { ...el, props: { ...el.props, children: newChildren }, key: i };
       }
     }

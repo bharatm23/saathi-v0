@@ -1,4 +1,30 @@
-**/node_modules/
-**/.env*
-*.zip
+# Python backend
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+*.egg-info/
+dist/
+.pytest_cache/
+
+# Next.js frontend
 .next/
+out/
+node_modules/
+.env.local
+.env.*.local
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Keep examples
+!.env.example
+!.env.local.example
