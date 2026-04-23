@@ -102,18 +102,23 @@ export async function generateDigest(userId: string, periodDays = 7): Promise<Di
 }
 
 export async function fetchChat(query: string) {
-  const res = await fetch(`${BASE}/rag/query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID, query }),
-  })
-  if (!res.ok) throw new Error("Chat failed")
-  return res.json() as Promise<{
-    response: string
-    sources: { type: string; lab?: string; date?: string; date_range?: string }[]
-    blocked: boolean
-    disclaimer: string
-  }>
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 60000)
+  try {
+    const res = await fetch(`${BASE}/rag/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: USER_ID, query }),
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+    if (!res.ok) throw new Error(`Chat failed: ${res.status}`)
+    return res.json()
+  } catch (e: any) {
+    clearTimeout(timeout)
+    if (e.name === 'AbortError') throw new Error('Backend is waking up — try again in 30s')
+    throw e
+  }
 }
 
 export async function fetchBrief(appointmentType: string) {
