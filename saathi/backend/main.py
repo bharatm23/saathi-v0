@@ -38,8 +38,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3001",
-        "https://saathi-v0.vercel.app/",  # your actual Vercel URL
-        "https://*.vercel.app",           # covers preview deployments
+        "https://saathi-v0.vercel.app",
+        "https://saathi-v0-backend.vercel.app/",
+        "https://*.vercel.app",
     ],
     allow_credentials=False,
     allow_methods=["*"],
