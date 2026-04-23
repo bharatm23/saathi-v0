@@ -156,10 +156,25 @@ export async function uploadReport(file: File) {
   const form = new FormData()
   form.append("file", file)
   form.append("user_id", USER_ID)
-  const res = await fetch(`${BASE}/ingest/report`, { method: "POST", body: form })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail ?? `Upload error: ${res.status}`)
+  
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 120000) // 2 min timeout
+  
+  try {
+    const res = await fetch(`${BASE}/ingest/report`, { 
+      method: "POST", 
+      body: form,
+      signal: controller.signal,
+    })
+    clearTimeout(timeout)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail ?? `Upload error: ${res.status}`)
+    }
+    return res.json()
+  } catch (e: any) {
+    clearTimeout(timeout)
+    if (e.name === 'AbortError') throw new Error('Request timed out — backend may be waking up, try again in 30s')
+    throw e
   }
-  return res.json()
 }

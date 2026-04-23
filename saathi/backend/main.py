@@ -34,17 +34,29 @@ app = FastAPI(
 #     allow_headers=["*"],
 # )
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3001",
-        "https://your-app.vercel.app",  # add your actual Vercel URL
+        "https://saathi-v0.vercel.app/",  # your actual Vercel URL
+        "https://*.vercel.app",           # covers preview deployments
     ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#         "http://localhost:3001",
+#         "https://your-app.vercel.app",  # add your actual Vercel URL
+#     ],
+#     allow_credentials=False,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 app.include_router(ingest.router,    prefix="/ingest",    tags=["Ingestion"])
 app.include_router(rag.router,       prefix="/rag",       tags=["RAG / Chat"])
