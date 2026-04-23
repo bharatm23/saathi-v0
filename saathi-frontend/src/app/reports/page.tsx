@@ -37,7 +37,7 @@ export default function ReportsPage() {
             kind: result.lab_name ?? "Lab report",
             date: result.report_date ?? "just now",
             errorMessage: result.error,
-            metrics: (result.metrics_extracted ?? []).slice(0, 8).map((name) => ({
+            metrics: (result.metrics_extracted ?? []).slice(0, 8).map((name: string) => ({
               name,
               value: "",
               unit: "",
@@ -45,12 +45,12 @@ export default function ReportsPage() {
             })),
           }
         ))
-      } catch {
+      } catch (e: any) {
         setReports((prev) => prev.map((r) =>
           r.id !== tempId ? r : {
             ...r,
             status: "error" as const,
-            errorMessage: "Upload failed. Try a clearer image or typed PDF.",
+            errorMessage: e?.message ?? "Upload failed. Try a clearer image or typed PDF.",
           }
         ))
       }

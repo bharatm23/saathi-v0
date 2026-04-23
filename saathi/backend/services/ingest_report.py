@@ -69,6 +69,9 @@ Rules:
   stage the value falls into. Store in stage_classification.
   Example: Vit D 8.98, bands Deficiency:<10 → stage_classification: "Deficiency"
   Example: HbA1c 7.1, bands Diabetic:>6.5   → stage_classification: "Diabetic"
+  Only populate stage_classification when the report itself explicitly states a named category 
+  (e.g. "Deficiency", "Diabetic", "Non-Reactive"). Do NOT derive or infer stages from numeric 
+  values alone. If the report doesn't name a stage, leave stage_classification null.
 - INTERPRETATION TEXT: If a test has a clinical explanation paragraph (Summary, Uses,
   Interpretation sections), capture the FULL text in interpretation_text.
 - "0 - 0" in reference_range is a PDF rendering artifact → store as null.
@@ -198,7 +201,7 @@ async def _llm(system: str, chunk: str, n: int, total: int) -> dict:
 
 @traceable(name="openai-extract-metrics")
 async def extract_structured_metrics(raw_text: str) -> dict:
-    CHUNK_SIZE = 20000
+    CHUNK_SIZE = 15000
     chunks = [raw_text[i:i + CHUNK_SIZE] for i in range(0, len(raw_text), CHUNK_SIZE)]
     total  = len(chunks)
 
@@ -307,12 +310,24 @@ def post_process_metrics(structured: dict) -> dict:
         ref        = (data.get("reference_range") or "").strip()
         name_lower = name.lower()
 
+        # Strip inline flag prefixes like "H 492.30" → 492.30
+        if isinstance(value, str):
+            stripped = re.match(r'^[HLhl]\s+([\d.]+)', value.strip())
+            if stripped:
+                data["value"] = float(stripped.group(1))
+                value = data["value"]
+
         # Below-detection-limit — keep LLM flag, skip numeric
         if isinstance(value, str) and BELOW_LIMIT_RE.match(value.strip()):
             if data.get("flag") not in ("H", "L"):
                 data["flag"] = "L" if value.strip().startswith("<") else "H"
             continue
 
+        # If value matches reference exactly → Normal
+        if isinstance(value, str) and ref and value.lower().strip() == ref.lower().strip():
+            data["flag"] = "Normal"
+            continue
+        
         # Qualitative values — flag = the word
         if isinstance(value, str) and value.lower() in QUALITATIVE_VALUES:
             if data.get("flag") in ("H", "L", "Normal"):

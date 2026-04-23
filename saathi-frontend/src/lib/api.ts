@@ -136,18 +136,30 @@ export async function fetchDigest(period: number) {
   return res.json() as Promise<{ digest: string; disclaimer: string }>
 }
 
+// export async function uploadReport(file: File) {
+//   const form = new FormData()
+//   form.append("file", file)
+//   form.append("user_id", USER_ID)
+//   const res = await fetch(`${BASE}/ingest/report`, { method: "POST", body: form })
+//   if (!res.ok) throw new Error("Upload failed")
+//   return res.json() as Promise<{
+//     success: boolean
+//     metrics_extracted?: string[]
+//     impressions?: string[]
+//     report_date?: string
+//     lab_name?: string
+//     error?: string
+//   }>
+// }
+
 export async function uploadReport(file: File) {
   const form = new FormData()
   form.append("file", file)
   form.append("user_id", USER_ID)
   const res = await fetch(`${BASE}/ingest/report`, { method: "POST", body: form })
-  if (!res.ok) throw new Error("Upload failed")
-  return res.json() as Promise<{
-    success: boolean
-    metrics_extracted?: string[]
-    impressions?: string[]
-    report_date?: string
-    lab_name?: string
-    error?: string
-  }>
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail ?? `Upload error: ${res.status}`)
+  }
+  return res.json()
 }
