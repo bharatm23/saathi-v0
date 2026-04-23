@@ -35,7 +35,7 @@ export default function ChatPage() {
         role: "assistant",
         content: data.response,
         blocked: data.blocked,
-        sources: (data.sources ?? []).map(s => ({
+        sources: (data.sources ?? []).map((s: any) => ({
           kind: s.type === "lab_report" ? "lab" : "wearable" as "lab" | "wearable",
           label: s.lab ?? s.date_range ?? "Source",
           date: s.date ?? s.date_range ?? "",
