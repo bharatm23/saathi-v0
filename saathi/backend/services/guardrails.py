@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 
-import spacy
+# import spacy
 from langsmith import traceable
 from openai import AsyncOpenAI
 
@@ -24,15 +24,15 @@ from config import settings
 
 openai = AsyncOpenAI(api_key=settings.openai_api_key)
 
-# Load spaCy model — en_core_web_sm is small and fast
-# Run once at startup: python -m spacy download en_core_web_sm
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    # If model not downloaded yet, provide clear instruction
-    raise RuntimeError(
-        "spaCy model not found. Run: python -m spacy download en_core_web_sm"
-    )
+# # Load spaCy model — en_core_web_sm is small and fast
+# # Run once at startup: python -m spacy download en_core_web_sm
+# try:
+#     # nlp = spacy.load("en_core_web_sm")
+# except OSError:
+#     # If model not downloaded yet, provide clear instruction
+#     raise RuntimeError(
+#         "spaCy model not found. Run: python -m spacy download en_core_web_sm"
+#     )
 
 
 # ── Safe response — shown whenever a query is blocked ────────
@@ -59,39 +59,39 @@ DIAGNOSIS_PATTERNS = {
 }
 
 
-def spacy_medical_check(query: str) -> tuple[bool, str]:
-    """
-    Returns (is_medical, reason).
-    Uses spaCy linguistic analysis — not keyword matching.
-    """
-    doc = nlp(query.lower())
+# def spacy_medical_check(query: str) -> tuple[bool, str]:
+#     """
+#     Returns (is_medical, reason).
+#     Uses spaCy linguistic analysis — not keyword matching.
+#     """
+#     doc = nlp(query.lower())
 
-    # Check 1: Does the sentence contain medical entity + advice verb combo?
-    has_medical_ent = any(ent.label_ in MEDICAL_ENT_LABELS for ent in doc.ents)
-    has_advice_verb = any(token.lemma_ in ADVICE_VERBS for token in doc if token.pos_ == "VERB")
+#     # Check 1: Does the sentence contain medical entity + advice verb combo?
+#     has_medical_ent = any(ent.label_ in MEDICAL_ENT_LABELS for ent in doc.ents)
+#     has_advice_verb = any(token.lemma_ in ADVICE_VERBS for token in doc if token.pos_ == "VERB")
 
-    if has_medical_ent and has_advice_verb:
-        return True, "medical entity + advice verb detected"
+#     if has_medical_ent and has_advice_verb:
+#         return True, "medical entity + advice verb detected"
 
-    # Check 2: Self-diagnosis pattern — "do I have X", "I think I have X"
-    # Look for: pronoun (I) + VERB (have/got/suffer) + noun/entity chain
-    for token in doc:
-        if token.lemma_ in DIAGNOSIS_PATTERNS and token.pos_ == "VERB":
-            # Check if subject is first-person
-            for child in token.children:
-                if child.dep_ == "nsubj" and child.text in {"i", "we", "my"}:
-                    return True, "self-diagnosis pattern detected"
+#     # Check 2: Self-diagnosis pattern — "do I have X", "I think I have X"
+#     # Look for: pronoun (I) + VERB (have/got/suffer) + noun/entity chain
+#     for token in doc:
+#         if token.lemma_ in DIAGNOSIS_PATTERNS and token.pos_ == "VERB":
+#             # Check if subject is first-person
+#             for child in token.children:
+#                 if child.dep_ == "nsubj" and child.text in {"i", "we", "my"}:
+#                     return True, "self-diagnosis pattern detected"
 
-    # Check 3: Direct question about medical meaning/interpretation
-    # "what does X mean", "is X normal", "is X dangerous"
-    interpretation_lemmas = {"mean", "indicate", "signify", "normal", "dangerous", "serious", "bad", "good"}
-    question_words = {token.lemma_ for token in doc if token.tag_ in {"WDT", "WP", "WRB", "WP$"}}
-    content_lemmas = {token.lemma_ for token in doc}
+#     # Check 3: Direct question about medical meaning/interpretation
+#     # "what does X mean", "is X normal", "is X dangerous"
+#     interpretation_lemmas = {"mean", "indicate", "signify", "normal", "dangerous", "serious", "bad", "good"}
+#     question_words = {token.lemma_ for token in doc if token.tag_ in {"WDT", "WP", "WRB", "WP$"}}
+#     content_lemmas = {token.lemma_ for token in doc}
 
-    if question_words and content_lemmas & interpretation_lemmas:
-        return True, "medical interpretation question detected"
+#     if question_words and content_lemmas & interpretation_lemmas:
+#         return True, "medical interpretation question detected"
 
-    return False, ""
+#     return False, ""
 
 
 # ── Stage 2: LLM classifier ───────────────────────────────────
@@ -206,15 +206,15 @@ async def run_guardrails(
       "sycophancy_detected": bool,
     }
     """
-    # Stage 1: spaCy (fast, free)
-    spacy_blocked, spacy_reason = spacy_medical_check(query)
-    if spacy_blocked:
-        return {
-            "blocked": True,
-            "reason": f"spaCy: {spacy_reason}",
-            "safe_response": SAFE_RESPONSE,
-            "sycophancy_detected": False,
-        }
+    # # Stage 1: spaCy (fast, free)
+    # spacy_blocked, spacy_reason = spacy_medical_check(query)
+    # if spacy_blocked:
+    #     return {
+    #         "blocked": True,
+    #         "reason": f"spaCy: {spacy_reason}",
+    #         "safe_response": SAFE_RESPONSE,
+    #         "sycophancy_detected": False,
+    #     }
 
     # Stage 2: LLM classifier (catches nuanced cases)
     llm_blocked, llm_reason = await llm_intent_check(query)

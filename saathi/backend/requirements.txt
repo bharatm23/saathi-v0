@@ -6,7 +6,7 @@ supabase
 openai
 llama-parse
 langsmith
-spacy
+# spacy
 python-dotenv
 pydantic
 pydantic-settings
