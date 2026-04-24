@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Sidebar from '../components/sidebar'
 import { tokens, cardStyle } from '@/lib/design-tokens'
 
 const DEVICES = [
@@ -74,7 +73,6 @@ function Badge({ active }: { active: boolean }) {
 export default function Connect() {
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: tokens.bg }}>
-      <Sidebar />
       <main className="flex-1 ml-[80px] flex items-center justify-center p-8">
         <div className="w-full max-w-2xl">
 

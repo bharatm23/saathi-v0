@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import Sidebar from '../components/sidebar'
 import { tokens, cardStyle } from '@/lib/design-tokens'
 import { PLAYGROUND_SCENARIOS } from '@/lib/playground-data'
 import { buildDashboardConfig, buildInsightsSummary, DashboardConfig } from '@/lib/layout'
@@ -157,7 +156,6 @@ export default function Playground() {
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: tokens.bg }}>
-      <Sidebar />
       <main className="flex-1 ml-[80px] px-6 py-6">
 
         {/* Header */}
