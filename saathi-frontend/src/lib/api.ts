@@ -22,22 +22,12 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 export async function fetchChat(query: string) {
   const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 60000)
-  try {
-    const res = await fetch(`${BASE}/rag/query`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ user_id: userId, query }),
-      signal: controller.signal,
-    })
-    clearTimeout(timeout)
-    if (!res.ok) throw new Error(`Chat failed: ${res.status}`)
-    return res.json()
-  } catch (e: any) {
-    clearTimeout(timeout)
-    if (e.name === 'AbortError') throw new Error('Backend is waking up — try again in 30s')
-    throw e
-  }
+  const res = await fetch(`${BASE}/rag/query`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ user_id: userId, query }),
+  })
+  if (!res.ok) throw new Error(`Chat failed: ${res.status}`)
+  return res.json()
 }
 
 export async function fetchBrief(appointmentType: string) {
@@ -65,30 +55,36 @@ export async function uploadReport(file: File) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
-  const form = new FormData()
-  form.append('file', file)
-  form.append('user_id', session.user.id)
+  const userId = session.user.id
+  const ext = file.name.split('.').pop() ?? 'pdf'
+  const storagePath = `${userId}/${Date.now()}.${ext}`
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 120000)
-  try {
-    const res = await fetch(`${BASE}/ingest/report`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${session.access_token}` },
-      body: form,
-      signal: controller.signal,
-    })
-    clearTimeout(timeout)
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.detail ?? `Upload error: ${res.status}`)
-    }
-    return res.json()
-  } catch (e: any) {
-    clearTimeout(timeout)
-    if (e.name === 'AbortError') throw new Error('Request timed out — try again in 30s')
-    throw e
+  // Step 1: Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
+  const { error: storageError } = await supabase.storage
+    .from('lab-reports')
+    .upload(storagePath, file, { contentType: file.type, upsert: false })
+
+  if (storageError) throw new Error(`Storage upload failed: ${storageError.message}`)
+
+  // Step 2: Tell backend to fetch + process from storage
+  const res = await fetch(`${BASE}/ingest/report`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      storage_path: storagePath,
+      file_name: file.name,
+      user_id: userId,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail ?? `Processing error: ${res.status}`)
   }
+  return res.json()
 }
 
 // Fetch user's lab reports directly from Supabase
