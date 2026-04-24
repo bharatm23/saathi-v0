@@ -1,84 +1,66 @@
-import { Redis } from '@upstash/redis'
+// src/lib/db.ts
+import { createClient } from '@supabase/supabase-js'
 
-const kv = Redis.fromEnv()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-import { HealthMetric } from './providers/types'
+const TTL_HOURS: Record<string, number> = { day: 6, '30d': 24, '1y': 48 }
 
-const TTL = {
-  day:  60 * 60 * 6,
-  '30d': 60 * 60 * 24,
-  '1y':  60 * 60 * 48,
-}
-
-export async function saveConnection(
-  userId: string,
-  provider: string,
-  accessToken: string,
-  refreshToken: string | null,
-  expiresAt: number | null
-) {
-  await kv.set(
-    'conn:' + userId + ':' + provider,
-    { accessToken, refreshToken, expiresAt, connectedAt: Date.now() },
-    { ex: 60 * 60 * 24 * 365 }
-  )
-}
-
-export async function getConnection(userId: string, provider: string) {
-  return kv.get<{ accessToken: string; refreshToken: string | null; expiresAt: number | null }>(
-    'conn:' + userId + ':' + provider
-  )
+function isStale(cachedAt: string, ttlHours: number): boolean {
+  return (Date.now() - new Date(cachedAt).getTime()) > ttlHours * 3600 * 1000
 }
 
 export async function getCachedMetrics(
-  userId: string,
-  provider: string,
-  period: string,
-  syncDate: string,
-  endpoint: string
-): Promise<HealthMetric[] | null> {
-  return null;
-  return kv.get<HealthMetric[]>(
-    'metrics:' + userId + ':' + provider + ':' + endpoint + ':' + period + ':' + syncDate
-  )
+  userId: string, provider: string, period: string,
+  endpointKey: string, syncDate: string
+) {
+  const ttl = TTL_HOURS[period] ?? 24
+  const { data } = await supabase
+    .from('wearable_cache')
+    .select('data, cached_at')
+    .eq('user_id', userId).eq('provider', provider)
+    .eq('endpoint_key', endpointKey).eq('period', period)
+    .eq('sync_date', syncDate)
+    .single()
+
+  if (!data) return null
+  if (isStale(data.cached_at, ttl)) return null
+  return data.data
 }
 
 export async function setCachedMetrics(
-  userId: string,
-  provider: string,
-  period: string,
-  syncDate: string,
-  endpoint: string,
-  metrics: HealthMetric[]
+  userId: string, provider: string, period: string,
+  endpointKey: string, syncDate: string, metrics: any
 ) {
-  return null; 
-  const ttl = TTL[period as keyof typeof TTL] ?? TTL.day
-  await kv.set(
-    'metrics:' + userId + ':' + provider + ':' + endpoint + ':' + period + ':' + syncDate,
-    metrics,
-    { ex: ttl }
-  )
+  await supabase.from('wearable_cache').upsert({
+    user_id: userId, provider, endpoint_key: endpointKey,
+    period, sync_date: syncDate, data: metrics, cached_at: new Date().toISOString()
+  }, { onConflict: 'user_id,provider,endpoint_key,period,sync_date' })
 }
 
-export async function getPlaygroundScenario(id: string) {
-  return kv.get<any>('playground:' + id)
+export async function getCachedLLM(userId: string, cacheKey: string) {
+  const { data } = await supabase
+    .from('llm_cache')
+    .select('data, cached_at')
+    .eq('user_id', userId).eq('cache_key', cacheKey)
+    .single()
+
+  if (!data) return null
+  if (isStale(data.cached_at, 24)) return null
+  return data.data
 }
 
-export async function getAllPlaygroundScenarios() {
-  const ids = await kv.smembers<string[]>('playground:index') ?? []
-  if (!ids.length) return []
-  const scenarios = await Promise.all(
-    ids.map(id => kv.get<{ id: string; label: string; description: string }>('playground:' + id))
-  )
-  return scenarios.filter(Boolean) as { id: string; label: string; description: string }[]
-}
-
-export async function upsertPlaygroundScenario(
-  id: string,
-  label: string,
-  description: string,
-  metrics: any
+export async function setCachedLLM(
+  userId: string, cacheKey: string, type: string, period: string, result: any
 ) {
-  await kv.set('playground:' + id, { id, label, description, metrics })
-  await kv.sadd('playground:index', id)
+  await supabase.from('llm_cache').upsert({
+    user_id: userId, cache_key: cacheKey, type, period,
+    data: result, cached_at: new Date().toISOString()
+  }, { onConflict: 'user_id,cache_key' })
 }
+
+// Legacy stubs (iron-session token storage — keep for OAuth flow)
+export async function saveConnection() { return null }
+export async function getConnection()  { return null }

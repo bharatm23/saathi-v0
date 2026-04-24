@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { getCachedLLM, setCachedLLM } from '@/lib/db'
+import { getOrCreateUserId } from '@/lib/session'
+import { createHash } from 'crypto'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -15,6 +18,10 @@ export async function POST(req: NextRequest) {
     : `Current ${periodLabel}:\n${currentSummary}`
 
   try {
+    const userId   = await getOrCreateUserId()
+    const cacheKey = createHash('md5').update(JSON.stringify({ currentSummary, previousSummary, period })).digest('hex')
+    const cached   = await getCachedLLM(userId, cacheKey)
+    if (cached) return NextResponse.json(cached)
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 300,
@@ -46,6 +53,7 @@ Example (bad): ["Your steps were 3,257, below the 10,000 target.", "Try to sleep
     const text = response.choices[0]?.message?.content ?? '[]'
     const clean = text.replace(/```json|```/g, '').trim()
     const insights: string[] = JSON.parse(clean)
+    await setCachedLLM(userId, cacheKey, 'insights', period, insights)
     return NextResponse.json({ insights })
   } catch {
     return NextResponse.json({ insights: [] })

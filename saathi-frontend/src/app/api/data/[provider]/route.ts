@@ -4,9 +4,6 @@ import { getSession } from '@/lib/session'
 import { Period } from '@/lib/providers/types'
 import { getCachedMetrics, setCachedMetrics } from '@/lib/db'
 import { getOrCreateUserId } from '@/lib/session'
-// Add after your existing imports
-const SAATHI_API = process.env.SAATHI_API_URL ?? 'http://localhost:8000'
-const SAATHI_USER_ID = process.env.SAATHI_USER_ID ?? 'your-uuid-here'
 
 async function getValidToken(session: any, id: string, provider: any): Promise<string | null> {
   const t = session.tokens?.[id]
@@ -74,7 +71,7 @@ export async function GET(
 
   const userId = await getOrCreateUserId()
   if (endpointKey !== 'sync') {
-    const cached = await getCachedMetrics(userId, id, period, date, endpointKey!)
+    const cached = await getCachedMetrics(userId, id, period, endpointKey!, date)
     if (cached) {
       return NextResponse.json({ metrics: cached, fromCache: true })
     }
@@ -112,7 +109,7 @@ export async function GET(
 
     const raw = await dataRes.json()
     if (endpointKey !== 'sync') {
-      await setCachedMetrics(userId, id, period, date, endpointKey!, endpoint.transform(raw, period))
+      await setCachedMetrics(userId, id, period, endpointKey!, date, endpoint.transform(raw, period))
     }
   
     // ── Saathi wearable sync ──────────────────────────────────
@@ -122,9 +119,7 @@ export async function GET(
       const SAATHI_API = process.env.SAATHI_API_URL ?? 'http://localhost:8000'
       const SAATHI_USER_ID = process.env.SAATHI_USER_ID ?? ''
       if (SAATHI_USER_ID) {
-        if (id === 'fitbit' && period === 'day' && endpointKey === 'activities') {
-          console.log('🔵 Saathi sync firing for date:', anchorDate)  // ← add this
-          const SAATHI_API = process.env.SAATHI_API_URL ?? 'http://localhost:8000'}
+        console.log('🔵 Saathi sync firing for date:', anchorDate)
         fetch(`${SAATHI_API}/ingest/wearable`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

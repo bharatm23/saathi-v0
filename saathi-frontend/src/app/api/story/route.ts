@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { getCachedLLM, setCachedLLM } from '@/lib/db'
+import { getOrCreateUserId } from '@/lib/session'
+import { createHash } from 'crypto'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -53,6 +56,10 @@ Rules:
 - Respond ONLY with valid JSON, no markdown`
 
   try {
+    const userId   = await getOrCreateUserId()
+    const cacheKey = createHash('md5').update(JSON.stringify({ metrics, previousMetrics, period, tones })).digest('hex')
+    const cached   = await getCachedLLM(userId, cacheKey)
+    if (cached) return NextResponse.json(cached)
     const res = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 500,
@@ -61,6 +68,7 @@ Rules:
       response_format: { type: 'json_object' },
     })
     const data = JSON.parse(res.choices[0].message.content ?? '{}')
+    await setCachedLLM(userId, cacheKey, 'story', period, data)
     return NextResponse.json(data)
   } catch (e) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
