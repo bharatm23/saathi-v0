@@ -57,16 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   session.oauth = undefined
   await session.save()
 
-  // Save to DB
-  try {
-    const userId = await getOrCreateUserId()
-    await saveConnection(
-      userId, id,
-      tokens.access_token,
-      tokens.refresh_token ?? null,
-      tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null
-    )
-  } catch {}
+  // Connection storage handled by iron-session (token saved in session.save() above)
 
   // Clear OAuth cookies
   const response = NextResponse.redirect(base + '/dashboard?connected=' + id)
