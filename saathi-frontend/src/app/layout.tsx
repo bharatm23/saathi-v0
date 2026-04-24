@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
+import { Inter, Playfair_Display } from "next/font/google"
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const playfair = Playfair_Display({ 
+  subsets: ["latin"], 
+  weight: ["400", "700"],
+  variable: "--font-playfair"
+})
+
 
 export const metadata: Metadata = {
   title: "Saathi",
@@ -12,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${inter.className} ${playfair.variable}`}>
       <body className="min-h-screen bg-gray-50">
         <div className="flex min-h-screen">
           <Sidebar />
