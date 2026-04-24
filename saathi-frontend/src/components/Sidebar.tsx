@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, FileText, MessageSquare, ClipboardList, Sparkles } from "lucide-react";
 
 const items = [
-  { href: "/",        label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard",        label: "Dashboard", icon: LayoutDashboard },
   { href: "/reports", label: "Reports",   icon: FileText },
   { href: "/chat",    label: "Chat",      icon: MessageSquare },
   { href: "/brief",   label: "Brief",     icon: ClipboardList },
