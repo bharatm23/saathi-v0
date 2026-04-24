@@ -1,114 +1,33 @@
+// src/lib/api.ts
+import { createClient } from '@/lib/supabase'
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-const USER_ID = "a6c75706-96a9-4465-aea2-7807f8df17d8" // POC hardcoded
 
-export interface LabMetric {
-  value: number | string
-  unit: string | null
-  reference_range: string | null
-  flag: string | null
-  interpretation_bands: string | null
-  stage_classification: string | null
-  interpretation_text: string | null
-  panel: string | null
+async function getUserId(): Promise<string> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  return user.id
 }
 
-export interface StructuredData {
-  labs: Record<string, LabMetric>
-  clinical_notes: Record<string, { value: string }>
-  risk_scores: Record<string, { score: string | number; interpretation?: string; acceptable_score?: string | number; time_horizon?: string }>
-  vitals: Record<string, { value: string | number; unit: string }>
-  impressions: string[]
-}
-
-export interface ChatSource {
-  type: 'lab_report' | 'wearable'
-  id?: string
-  date?: string
-  lab?: string
-  date_range?: string
-  count?: number
-}
-
-export interface ChatResponse {
-  response: string
-  sources: ChatSource[]
-  blocked: boolean
-  disclaimer: string
-}
-
-export interface IngestResult {
-  success: boolean
-  report_id?: string
-  metrics_extracted?: string[]
-  clinical_notes?: string[]
-  risk_scores?: string[]
-  impressions?: string[]
-  report_date?: string
-  lab_name?: string
-  patient_name?: string
-  error?: string
-}
-
-export interface BriefResult {
-  brief: string
-  appointment_type: string
-  data_sources: { lab_reports: number; wearable_days: number }
-  disclaimer: string
-}
-
-export interface DigestResult {
-  digest: string
-  period_days: number
-  disclaimer: string
-}
-
-export async function sendChatMessage(userId: string, query: string): Promise<ChatResponse> {
-  const res = await fetch(`${BASE}/rag/query`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, query }),
-  })
-  if (!res.ok) throw new Error(`Chat error: ${res.status}`)
-  return res.json()
-}
-
-export async function uploadLabReport(userId: string, file: File): Promise<IngestResult> {
-  const form = new FormData()
-  form.append('file', file)
-  form.append('user_id', userId)
-  const res = await fetch(`${BASE}/ingest/report`, { method: 'POST', body: form })
-  if (!res.ok) throw new Error(`Upload error: ${res.status}`)
-  return res.json()
-}
-
-export async function generateBrief(userId: string, appointmentType: string): Promise<BriefResult> {
-  const res = await fetch(`${BASE}/brief/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, appointment_type: appointmentType }),
-  })
-  if (!res.ok) throw new Error(`Brief error: ${res.status}`)
-  return res.json()
-}
-
-export async function generateDigest(userId: string, periodDays = 7): Promise<DigestResult> {
-  const res = await fetch(`${BASE}/digest/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, period_days: periodDays }),
-  })
-  if (!res.ok) throw new Error(`Digest error: ${res.status}`)
-  return res.json()
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not authenticated')
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session.access_token}`,
+  }
 }
 
 export async function fetchChat(query: string) {
+  const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 60000)
   try {
     const res = await fetch(`${BASE}/rag/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: USER_ID, query }),
+      method: 'POST', headers,
+      body: JSON.stringify({ user_id: userId, query }),
       signal: controller.signal,
     })
     clearTimeout(timeout)
@@ -122,52 +41,40 @@ export async function fetchChat(query: string) {
 }
 
 export async function fetchBrief(appointmentType: string) {
+  const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
   const res = await fetch(`${BASE}/brief/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID, appointment_type: appointmentType }),
+    method: 'POST', headers,
+    body: JSON.stringify({ user_id: userId, appointment_type: appointmentType }),
   })
-  if (!res.ok) throw new Error("Brief failed")
-  return res.json() as Promise<{ brief: string; disclaimer: string }>
+  if (!res.ok) throw new Error('Brief failed')
+  return res.json()
 }
 
 export async function fetchDigest(period: number) {
+  const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
   const res = await fetch(`${BASE}/digest/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID, period_days: period }),
+    method: 'POST', headers,
+    body: JSON.stringify({ user_id: userId, period_days: period }),
   })
-  if (!res.ok) throw new Error("Digest failed")
-  return res.json() as Promise<{ digest: string; disclaimer: string }>
+  if (!res.ok) throw new Error('Digest failed')
+  return res.json()
 }
 
-// export async function uploadReport(file: File) {
-//   const form = new FormData()
-//   form.append("file", file)
-//   form.append("user_id", USER_ID)
-//   const res = await fetch(`${BASE}/ingest/report`, { method: "POST", body: form })
-//   if (!res.ok) throw new Error("Upload failed")
-//   return res.json() as Promise<{
-//     success: boolean
-//     metrics_extracted?: string[]
-//     impressions?: string[]
-//     report_date?: string
-//     lab_name?: string
-//     error?: string
-//   }>
-// }
-
 export async function uploadReport(file: File) {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not authenticated')
+
   const form = new FormData()
-  form.append("file", file)
-  form.append("user_id", USER_ID)
-  
+  form.append('file', file)
+  form.append('user_id', session.user.id)
+
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 120000) // 2 min timeout
-  
+  const timeout = setTimeout(() => controller.abort(), 120000)
   try {
-    const res = await fetch(`${BASE}/ingest/report`, { 
-      method: "POST", 
+    const res = await fetch(`${BASE}/ingest/report`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
       body: form,
       signal: controller.signal,
     })
@@ -179,7 +86,29 @@ export async function uploadReport(file: File) {
     return res.json()
   } catch (e: any) {
     clearTimeout(timeout)
-    if (e.name === 'AbortError') throw new Error('Request timed out — backend may be waking up, try again in 30s')
+    if (e.name === 'AbortError') throw new Error('Request timed out — try again in 30s')
     throw e
   }
+}
+
+// Fetch user's lab reports directly from Supabase
+export async function fetchLabReports() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('lab_reports')
+    .select('id, file_name, lab_name, report_date, structured_data, uploaded_at, source')
+    .eq('user_id', user.id)
+    .order('report_date', { ascending: false })
+    .limit(20)
+
+  if (error) throw error
+  return data ?? []
+}
+
+export async function signOut() {
+  const supabase = createClient()
+  await supabase.auth.signOut()
 }
