@@ -3,7 +3,7 @@ import { providers } from '@/lib/providers'
 import { getSession } from '@/lib/session'
 import { Period } from '@/lib/providers/types'
 import { getCachedMetrics, setCachedMetrics } from '@/lib/db'
-import { getOrCreateUserId } from '@/lib/session'
+import { getSupabaseUserId } from '@/lib/db'
 
 async function getValidToken(session: any, id: string, provider: any): Promise<string | null> {
   const t = session.tokens?.[id]
@@ -69,12 +69,10 @@ export async function GET(
 
   const date = syncDate ?? new Date().toISOString().split('T')[0]
 
-  const userId = await getOrCreateUserId()
-  if (endpointKey !== 'sync') {
+  const userId = await getSupabaseUserId()
+  if (userId && endpointKey !== 'sync') {
     const cached = await getCachedMetrics(userId, id, period, endpointKey!, date)
-    if (cached) {
-      return NextResponse.json({ metrics: cached, fromCache: true })
-    }
+    if (cached) return NextResponse.json({ metrics: cached, fromCache: true })
   }
 
   const endpoint = provider.dataEndpoints.find(e => e.key === endpointKey)
@@ -108,28 +106,20 @@ export async function GET(
   if (!dataRes.ok) return NextResponse.json({ error: 'Fetch failed', status: dataRes.status }, { status: dataRes.status })
 
     const raw = await dataRes.json()
-    if (endpointKey !== 'sync') {
+    if (userId && endpointKey !== 'sync') {
       await setCachedMetrics(userId, id, period, endpointKey!, date, endpoint.transform(raw, period))
     }
   
     // ── Saathi wearable sync ──────────────────────────────────
     // Fire-and-forget on day period only — avoids duplicate syncs
     // for 30d/1y fetches. Never blocks or breaks the dashboard.
-    if (id === 'fitbit' && period === 'day' && endpointKey === 'activities') {
-      const SAATHI_API = process.env.SAATHI_API_URL ?? 'http://localhost:8000'
-      const SAATHI_USER_ID = process.env.SAATHI_USER_ID ?? ''
-      if (SAATHI_USER_ID) {
-        console.log('🔵 Saathi sync firing for date:', anchorDate)
-        fetch(`${SAATHI_API}/ingest/wearable`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: SAATHI_USER_ID,
-            date: anchorDate,
-            data: raw,          // raw Fitbit activities response
-          }),
-        }).catch(() => {})      // silent fail — dashboard never depends on this
-      }
+    if (userId && id === 'fitbit' && period === 'day' && endpointKey === 'sync') {
+      const SAATHI_API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+      fetch(`${SAATHI_API}/ingest/wearable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, date: anchorDate, data: raw }),
+      }).catch(() => {})
     }
     // ─────────────────────────────────────────────────────────
   

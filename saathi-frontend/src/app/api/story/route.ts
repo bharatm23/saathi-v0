@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getCachedLLM, setCachedLLM } from '@/lib/db'
-import { getOrCreateUserId } from '@/lib/session'
+import { getSupabaseUserId } from '@/lib/db'
 import { createHash } from 'crypto'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -56,7 +56,7 @@ Rules:
 - Respond ONLY with valid JSON, no markdown`
 
   try {
-    const userId   = await getOrCreateUserId()
+    const userId = await getSupabaseUserId() ?? 'anonymous'
     const cacheKey = createHash('md5').update(JSON.stringify({ metrics, previousMetrics, period, tones })).digest('hex')
     const cached   = await getCachedLLM(userId, cacheKey)
     if (cached) return NextResponse.json(cached)

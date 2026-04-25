@@ -1,12 +1,13 @@
 // src/lib/db.ts
 import { createClient } from '@supabase/supabase-js'
+import { getSession } from '@/lib/session'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const TTL_HOURS: Record<string, number> = { day: 6, '30d': 24, '1y': 48 }
+const TTL_HOURS: Record<string, number> = { day: 2, '30d': 24, '1y': 48 }
 
 function isStale(cachedAt: string, ttlHours: number): boolean {
   return (Date.now() - new Date(cachedAt).getTime()) > ttlHours * 3600 * 1000
@@ -50,6 +51,19 @@ export async function getCachedLLM(userId: string, cacheKey: string) {
   if (!data) return null
   if (isStale(data.cached_at, 24)) return null
   return data.data
+}
+
+export async function getSupabaseUserId(): Promise<string | null> {
+  // Try Supabase auth cookie first
+  const { createServerSupabaseClient } = await import('@/lib/supabase-server')
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) return user.id
+  } catch {}
+  // Fall back to iron-session userId
+  const session = await getSession()
+  return session.userId ?? null
 }
 
 export async function setCachedLLM(
