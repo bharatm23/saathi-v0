@@ -72,7 +72,7 @@ Rules:
     const data = JSON.parse(res.choices[0].message.content ?? '{}')
     await setCachedLLM(userId, cacheKey, 'story', period, data)
     return NextResponse.json(data)
-  } catch (e) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? 'Failed' }, { status: 500 })
   }
 }
