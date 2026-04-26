@@ -4,7 +4,9 @@ import { getCachedLLM, setCachedLLM } from '@/lib/db'
 import { getSupabaseUserId } from '@/lib/db'
 import { createHash } from 'crypto'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// openAI rate limit hit
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENROUTER_API_KEY })
 
 const TONE_MAP: Record<string, string> = {
   companion: 'Warm, personal, encouraging. Acknowledge effort. Celebrate small wins. Use "you" naturally.',
