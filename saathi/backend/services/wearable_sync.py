@@ -20,7 +20,25 @@ from openai import AsyncOpenAI
 from config import settings
 from db.client import upsert_wearable_snapshot
 
-openai = AsyncOpenAI(api_key=settings.openai_api_key)
+# #openAI rate limit reached
+# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+
+# Option 1: OpenRouter (active)
+openai = AsyncOpenAI(
+    api_key=settings.openrouter_api_key,
+    base_url="https://openrouter.ai/api/v1",
+)
+
+# Option 2: Direct OpenAI (fallback)
+# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+# MODEL = "gpt-4o"
+
+# Option 3: Claude via OpenRouter (second fallback)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
+# MODEL = "anthropic/claude-sonnet-4-5"
 
 
 # ── Metric normalisation ──────────────────────────────────────
