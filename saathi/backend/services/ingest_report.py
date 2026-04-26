@@ -21,8 +21,26 @@ from config import settings
 from db.client import insert_lab_report
 from services.wearable_sync import embed_text
 
-openai = AsyncOpenAI(api_key=settings.openai_api_key)
-_parser: LlamaParse | None = None
+# # rate limit reached
+# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+# _parser: LlamaParse | None = None
+
+openai = AsyncOpenAI(
+    api_key=settings.openrouter_api_key,
+    base_url="https://openrouter.ai/api/v1",
+)
+# MODEL = "openai/gpt-4o"
+
+# Option 2: Direct OpenAI (fallback)
+# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+# MODEL = "gpt-4o"
+
+# Option 3: Claude via OpenRouter (second fallback)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
+# MODEL = "anthropic/claude-sonnet-4-5"
 
 
 def get_parser() -> LlamaParse:
