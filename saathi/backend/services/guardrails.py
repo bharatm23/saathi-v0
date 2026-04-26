@@ -24,7 +24,7 @@ from config import settings
 
 # # rate limit reached
 # openai = AsyncOpenAI(api_key=settings.openai_api_key)
-# _parser: LlamaParse | None = None
+_parser: LlamaParse | None = None
 
 openai = AsyncOpenAI(
     api_key=settings.openrouter_api_key,
