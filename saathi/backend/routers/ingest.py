@@ -119,7 +119,7 @@ class PeriodWearablePayload(BaseModel):
 
 @router.post("/wearable/period")
 async def ingest_wearable_period(payload: PeriodWearablePayload):
-    db = get_client()
+    db = create_client()
     # Fetch existing row if present, merge new metric into it
     existing = db.table("wearable_period_summaries") \
         .select("metrics") \
