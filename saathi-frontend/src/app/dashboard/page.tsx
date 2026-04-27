@@ -240,14 +240,16 @@ interface StoryData {
   callout?: string
 }
 
+// Change StoryCard props to include loading:
 function StoryCard({
-  period, metrics, previousMetrics, tones, onTonesChange
+  period, metrics, previousMetrics, tones, onTonesChange, dataLoading
 }: {
   period: Period
   metrics: HealthMetric[]
   previousMetrics: Record<string, DataPoint[]>
   tones: Tone[]
   onTonesChange: (t: Tone[]) => void
+  dataLoading: boolean
 }) {
   const [story, setStory] = useState<StoryData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -285,13 +287,14 @@ function StoryCard({
     } catch {}
     setLoading(false)
   }, [metrics, previousMetrics, period, tones])
-
+  
   useEffect(() => {
+    if (dataLoading) return  // ← add this line
     const key = period + '|' + tones.join(',') + '|' + metrics.length
     if (key === prevKey.current) return
     prevKey.current = key
     if (metrics.length) fetchStory()
-  }, [metrics, period, tones, fetchStory])
+  }, [metrics, period, tones, fetchStory, dataLoading])
 
   const handleToggle = (next: Tone[]) => {
     onTonesChange(next)
@@ -1468,7 +1471,7 @@ function DashboardInner() {
         {/* ── DAILY ── */}
         {period === 'day' && displayMetrics.length > 0 && (
           <>
-            <StoryCard period={period} metrics={displayMetrics} previousMetrics={{}} tones={tones} onTonesChange={setTones}/>
+            <StoryCard period={period} metrics={displayMetrics} previousMetrics={{}} tones={tones} onTonesChange={setTones} dataLoading={loading}/>
             <SnapshotBar metrics={displayMetrics} period={period}/>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <PrimeTrainingWindow metrics={displayMetrics}/>
@@ -1481,7 +1484,7 @@ function DashboardInner() {
         {/* ── 30 DAY ── */}
         {period === '30d' && displayMetrics.length > 0 && (
           <>
-            <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones}/>
+            <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones} dataLoading={loading}/>
             <SnapshotBar metrics={displayMetrics} period={period}/>
             <ConsistencyMatrix metrics={displayMetrics} isYearly={false}/>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1495,7 +1498,7 @@ function DashboardInner() {
         {/* ── YEARLY ── */}
         {period === '1y' && displayMetrics.length > 0 && (
           <>
-            <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones}/>
+            <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones} dataLoading={loading}/>
             <SnapshotBar metrics={displayMetrics} period={period}/>
             <AnnualBar metrics={displayMetrics}/>
             <ConsistencyMatrix metrics={displayMetrics} isYearly={true}/>

@@ -195,7 +195,8 @@ export const fitbitProvider: ProviderConfig = {
       key: 'sleep',
       label: 'Sleep',
       url: 'https://api.fitbit.com/1.2/user/-/sleep/date/SYNC_DATE.json',
-      timeseriesUrl: 'https://api.fitbit.com/1.2/user/-/sleep/date/PERIOD_START/today.json',
+      // timeseriesUrl: 'https://api.fitbit.com/1.2/user/-/sleep/date/PERIOD_START/today.json',
+      timeseriesUrl: 'https://api.fitbit.com/1.2/user/-/sleep/date/PERIOD_START/SYNC_DATE.json',
       transform: (data, period) => {
         if (period && period !== 'day') {
           const logs: any[] = data.sleep ?? []

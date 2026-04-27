@@ -77,7 +77,20 @@ export async function GET(
 
   const endpoint = provider.dataEndpoints.find(e => e.key === endpointKey)
   if (!endpoint) return NextResponse.json({ error: 'Unknown endpoint' }, { status: 400 })
-  const { fitbitPeriod, startDate, anchorDate } = resolvePeriod(period, date, shift)
+  // const { fitbitPeriod, startDate, anchorDate } = resolvePeriod(period, date, shift)
+  const { fitbitPeriod, anchorDate } = resolvePeriod(period, date, shift)
+  let { startDate } = resolvePeriod(period, date, shift)
+  // Skip activityLog for comparison fetches — Fitbit rejects shifted date queries
+  if (endpointKey === 'activityLog' && shift > 0) {
+    return NextResponse.json({ metrics: [] })
+  }
+
+  // Cap sleep range to 100 days max (Fitbit API limit)
+  if (endpointKey === 'sleep' && period === '1y') {
+    const cappedStart = new Date(anchorDate)
+    cappedStart.setDate(cappedStart.getDate() - 99)
+    startDate = cappedStart.toISOString().split('T')[0]
+  }
 
   const syncMs = new Date(anchorDate).getTime()
   const startUnix = Math.floor((syncMs - 86400000) / 1000)
