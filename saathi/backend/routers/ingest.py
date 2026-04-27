@@ -106,11 +106,11 @@ async def ingest_wearable(payload: WearablePayload):
         print(f"🔴 sync_day error: {e}")
         return {"stored": False, "error": str(e)}
 
-
 class PeriodWearablePayload(BaseModel):
     user_id: str
     period: str
     sync_date: str
+    source: str = "fitbit"
     metric_key: str
     avg: str | None = None
     min: str | None = None
@@ -119,27 +119,46 @@ class PeriodWearablePayload(BaseModel):
 
 @router.post("/wearable/period")
 async def ingest_wearable_period(payload: PeriodWearablePayload):
+    from db.client import get_client
+    from datetime import datetime
+
+    def clean(v: str | None) -> float | None:
+        try:
+            f = float(v)
+            return f if f > 0 else None
+        except (TypeError, ValueError):
+            return None
+
+    metrics_entry = {
+        "avg": clean(payload.avg),
+        "min": clean(payload.min),
+        "max": clean(payload.max),
+        "trend": payload.trend if payload.trend not in (None, "—") else None,
+    }
+
+    # Skip entirely if no usable data
+    if all(v is None for v in [metrics_entry["avg"], metrics_entry["min"], metrics_entry["max"]]):
+        return {"stored": False, "reason": "no valid data"}
+
     db = get_client()
-    # Fetch existing row if present, merge new metric into it
     existing = db.table("wearable_period_summaries") \
         .select("metrics") \
         .eq("user_id", payload.user_id) \
         .eq("period", payload.period) \
-        .eq("sync_date", payload.sync_date) \
-        .single().execute()
+        .eq("sync_date", payload.sync_date[:10]) \
+        .eq("source", payload.source) \
+        .execute()
 
-    metrics = existing.data["metrics"] if existing.data else {}
-    metrics[payload.metric_key] = {
-        "avg": payload.avg, "min": payload.min,
-        "max": payload.max, "trend": payload.trend
-    }
+    metrics = existing.data[0]["metrics"] if existing.data else {}
+    metrics[payload.metric_key] = metrics_entry
 
     db.table("wearable_period_summaries").upsert({
         "user_id": payload.user_id,
         "period": payload.period,
-        "sync_date": payload.sync_date,
+        "sync_date": payload.sync_date[:10],
+        "source": payload.source,
         "metrics": metrics,
         "cached_at": datetime.utcnow().isoformat(),
     }, on_conflict="user_id,period,sync_date,source").execute()
 
-    return {"stored": True}
+    return {"stored": True, "metric": payload.metric_key}

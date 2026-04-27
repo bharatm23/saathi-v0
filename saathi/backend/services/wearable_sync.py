@@ -179,3 +179,18 @@ async def sync_batch(
         result = await sync_day(user_id, snapshot_date, row, source)
         results.append(result)
     return results
+
+def normalise_metrics(raw: dict) -> dict:
+    metrics: dict[str, Any] = {}
+    for raw_key, col in FIELD_MAP.items():
+        if raw_key in raw and raw[raw_key] is not None:
+            try:
+                val = float(raw[raw_key])  # always cast to float first
+            except (TypeError, ValueError):
+                continue
+            if val <= 0:
+                continue
+            if col == "sleep_hours" and val > 24:
+                val = round(val / 60, 2)
+            metrics[col] = val
+    return metrics
