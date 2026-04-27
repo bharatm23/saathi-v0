@@ -7,7 +7,6 @@ import { createHash } from 'crypto'
 
 // openAI rate limit hit
 // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-// const openai = new OpenAI({ apiKey: process.env.OPENROUTER_API_KEY })
 
 // Option 1: OpenRouter (active)
 const openai = new OpenAI({ 

@@ -113,13 +113,15 @@ export async function GET(
     // ── Saathi wearable sync ──────────────────────────────────
     // Fire-and-forget on day period only — avoids duplicate syncs
     // for 30d/1y fetches. Never blocks or breaks the dashboard.
-    if (userId && id === 'fitbit' && period === 'day' && endpointKey === 'sync') {
-      const SAATHI_API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+    if (userId && id === 'fitbit' && period === 'day' && endpointKey === 'steps') {
+      const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+      console.log('🔵 Wearable sync firing — userId:', userId, 'date:', anchorDate, 'api:', SAATHI_API)
       fetch(`${SAATHI_API}/ingest/wearable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, date: anchorDate, data: raw }),
-      }).catch(() => {})
+      }).then(r => console.log('🟢 Wearable sync response:', r.status))
+      .catch(e => console.log('🔴 Wearable sync failed:', e.message))
     }
     // ─────────────────────────────────────────────────────────
   
