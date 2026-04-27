@@ -125,7 +125,7 @@ export async function GET(
         body: JSON.stringify({ user_id: userId, date: anchorDate, data: metricsFlat }),
       }).then(r => console.log('🟢 Wearable sync response:', r.status))
         .catch(e => console.log('🔴 Wearable sync failed:', e.message))
-    // ─────────────────────────────────────────────────────────
-  
+    }
+
     return NextResponse.json({ metrics: endpoint.transform(raw, period) })
-}}
+}
