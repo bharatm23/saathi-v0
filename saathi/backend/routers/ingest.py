@@ -9,7 +9,7 @@ Upload flow:
 5. Backend saves structured data to lab_reports table
 """
 from datetime import datetime, date as date_type
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from supabase import create_client
@@ -118,7 +118,9 @@ class PeriodWearablePayload(BaseModel):
     trend: str | None = None
 
 @router.post("/wearable/period")
-async def ingest_wearable_period(payload: PeriodWearablePayload):
+async def ingest_wearable_period(request: Request):
+    body = await request.json()
+    print(f"🔵 Period payload raw: {body}")
     from db.client import get_client
     from datetime import datetime
 
