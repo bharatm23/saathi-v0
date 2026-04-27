@@ -81,7 +81,7 @@ export async function GET(
   const { fitbitPeriod, anchorDate } = resolvePeriod(period, date, shift)
   let { startDate } = resolvePeriod(period, date, shift)
   // Skip activityLog for comparison fetches — Fitbit rejects shifted date queries
-  if (endpointKey === 'activityLog' && shift > 0) {
+  if (endpointKey === 'activityLog' && period !== 'day') {
     return NextResponse.json({ metrics: [] })
   }
 

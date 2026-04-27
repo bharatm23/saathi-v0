@@ -93,12 +93,15 @@ class WearablePayload(BaseModel):
 @router.post("/wearable")
 async def ingest_wearable(payload: WearablePayload):
     try:
+        print(f"🔵 Wearable payload received: user={payload.user_id} date={payload.date} keys={list(payload.data.keys())}")
         snapshot_date = date_type.fromisoformat(payload.date[:10])
         result = await sync_day(
             user_id=payload.user_id,
             snapshot_date=snapshot_date,
             raw_fitbit_response=payload.data,
         )
+        print(f"🟢 sync_day result: {result}")
         return result
     except Exception as e:
+        print(f"🔴 sync_day error: {e}")
         return {"stored": False, "error": str(e)}
