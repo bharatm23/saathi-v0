@@ -123,6 +123,10 @@ export async function GET(
       await setCachedMetrics(userId, id, period, endpointKey!, date, endpoint.transform(raw, period))
     }
   
+    const metricsFlat = endpoint
+  ? Object.fromEntries(endpoint.transform(raw, 'day').map((m: any) => [m.key, m.value]))
+  : {}
+  
     // ── Saathi wearable sync ──────────────────────────────────
     if (userId && id === 'fitbit' && period === 'day' && endpointKey !== 'sync' && endpointKey !== 'activityLog') {
       const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -147,12 +151,11 @@ export async function GET(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: userId,
-            period,
-            sync_date: anchorDate,
-            metric_key: m.key,
-            avg: m.avg, min: m.min, max: m.max, trend: m.trend,
-          }),
+          user_id: userId,
+          date: anchorDate,
+          data: metricsFlat,
+          skip_raw: true,   // signal to not overwrite raw_data
+        }),
         }).catch(() => {})
       }
     }

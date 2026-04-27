@@ -8,13 +8,14 @@ Upload flow:
 4. Backend runs extraction pipeline
 5. Backend saves structured data to lab_reports table
 """
+from datetime import datetime, date as date_type
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from supabase import create_client
+from db.client import get_client
 from config import settings
 from services.ingest_report import ingest_lab_report
-from datetime import date as date_type
 from services.wearable_sync import sync_day
 import httpx
 
@@ -83,12 +84,11 @@ async def ingest_from_storage(
 
     return result
 
-
 class WearablePayload(BaseModel):
     user_id: str
     date: str
     data: dict
-
+    skip_raw: bool = False
 
 @router.post("/wearable")
 async def ingest_wearable(payload: WearablePayload):
@@ -98,7 +98,7 @@ async def ingest_wearable(payload: WearablePayload):
         result = await sync_day(
             user_id=payload.user_id,
             snapshot_date=snapshot_date,
-            raw_fitbit_response=payload.data,
+            raw_fitbit_response={} if payload.skip_raw else payload.data,
         )
         print(f"🟢 sync_day result: {result}")
         return result
@@ -119,7 +119,7 @@ class PeriodWearablePayload(BaseModel):
 
 @router.post("/wearable/period")
 async def ingest_wearable_period(payload: PeriodWearablePayload):
-    db = create_client()
+    db = get_client()
     # Fetch existing row if present, merge new metric into it
     existing = db.table("wearable_period_summaries") \
         .select("metrics") \

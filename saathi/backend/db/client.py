@@ -107,10 +107,11 @@ async def upsert_wearable_snapshot(
         "user_id": user_id,
         "date": snapshot_date.isoformat(),
         "source": source,
-        "raw_data": raw_data,
         "embedding": embedding,
         **{k: v for k, v in metrics.items() if v is not None},
     }
+    if raw_data:  # only include if non-empty
+        payload["raw_data"] = raw_data
     result = (
         db.table("wearable_snapshots")
         .upsert(payload, on_conflict="user_id,date,source")
