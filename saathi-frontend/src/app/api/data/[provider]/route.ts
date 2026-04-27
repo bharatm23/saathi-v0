@@ -116,14 +116,16 @@ export async function GET(
     if (userId && id === 'fitbit' && period === 'day' && endpointKey === 'steps') {
       const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
       console.log('🔵 Wearable sync firing — userId:', userId, 'date:', anchorDate, 'api:', SAATHI_API)
+      const metricsFlat = Object.fromEntries(
+        endpoint.transform(raw, 'day').map((m: any) => [m.key, m.value])
+      )
       fetch(`${SAATHI_API}/ingest/wearable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, date: anchorDate, data: raw }),
+        body: JSON.stringify({ user_id: userId, date: anchorDate, data: metricsFlat }),
       }).then(r => console.log('🟢 Wearable sync response:', r.status))
-      .catch(e => console.log('🔴 Wearable sync failed:', e.message))
-    }
+        .catch(e => console.log('🔴 Wearable sync failed:', e.message))
     // ─────────────────────────────────────────────────────────
   
     return NextResponse.json({ metrics: endpoint.transform(raw, period) })
-}
+}}
