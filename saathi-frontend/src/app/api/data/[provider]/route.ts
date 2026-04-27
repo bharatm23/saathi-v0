@@ -124,9 +124,7 @@ export async function GET(
     }
   
     // ── Saathi wearable sync ──────────────────────────────────
-    // Fire-and-forget on day period only — avoids duplicate syncs
-    // for 30d/1y fetches. Never blocks or breaks the dashboard.
-    if (userId && id === 'fitbit' && period === 'day' && endpointKey === 'steps') {
+    if (userId && id === 'fitbit' && period === 'day' && endpointKey !== 'sync' && endpointKey !== 'activityLog') {
       const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
       console.log('🔵 Wearable sync firing — userId:', userId, 'date:', anchorDate, 'api:', SAATHI_API)
       const metricsFlat = Object.fromEntries(
@@ -138,6 +136,25 @@ export async function GET(
         body: JSON.stringify({ user_id: userId, date: anchorDate, data: metricsFlat }),
       }).then(r => console.log('🟢 Wearable sync response:', r.status))
         .catch(e => console.log('🔴 Wearable sync failed:', e.message))
+    }
+    // Backfill historical snapshots from timeseries data
+    if (userId && id === 'fitbit' && period !== 'day' && endpointKey !== 'activityLog' && endpointKey !== 'sync') {
+      const transformed = endpoint.transform(raw, period)
+      const m = transformed[0]
+      if (m) {
+        const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+        fetch(`${SAATHI_API}/ingest/wearable/period`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            period,
+            sync_date: anchorDate,
+            metric_key: m.key,
+            avg: m.avg, min: m.min, max: m.max, trend: m.trend,
+          }),
+        }).catch(() => {})
+      }
     }
 
     return NextResponse.json({ metrics: endpoint.transform(raw, period) })

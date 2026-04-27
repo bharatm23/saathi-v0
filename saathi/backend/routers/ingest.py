@@ -105,3 +105,41 @@ async def ingest_wearable(payload: WearablePayload):
     except Exception as e:
         print(f"🔴 sync_day error: {e}")
         return {"stored": False, "error": str(e)}
+
+
+class PeriodWearablePayload(BaseModel):
+    user_id: str
+    period: str
+    sync_date: str
+    metric_key: str
+    avg: str | None = None
+    min: str | None = None
+    max: str | None = None
+    trend: str | None = None
+
+@router.post("/wearable/period")
+async def ingest_wearable_period(payload: PeriodWearablePayload):
+    db = get_client()
+    # Fetch existing row if present, merge new metric into it
+    existing = db.table("wearable_period_summaries") \
+        .select("metrics") \
+        .eq("user_id", payload.user_id) \
+        .eq("period", payload.period) \
+        .eq("sync_date", payload.sync_date) \
+        .single().execute()
+
+    metrics = existing.data["metrics"] if existing.data else {}
+    metrics[payload.metric_key] = {
+        "avg": payload.avg, "min": payload.min,
+        "max": payload.max, "trend": payload.trend
+    }
+
+    db.table("wearable_period_summaries").upsert({
+        "user_id": payload.user_id,
+        "period": payload.period,
+        "sync_date": payload.sync_date,
+        "metrics": metrics,
+        "cached_at": datetime.utcnow().isoformat(),
+    }, on_conflict="user_id,period,sync_date,source").execute()
+
+    return {"stored": True}
