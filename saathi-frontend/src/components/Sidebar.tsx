@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, FileText, MessageSquare, ClipboardList, Sparkles, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, MessageSquare, ClipboardList, Sparkles, LogOut, Settings } from 'lucide-react'
 import { signOut } from '@/lib/api'
 
 const items = [
@@ -11,6 +11,7 @@ const items = [
   { href: '/chat',    label: 'Chat',      icon: MessageSquare   },
   { href: '/brief',   label: 'Brief',     icon: ClipboardList   },
   { href: '/digest',  label: 'Digest',    icon: Sparkles        },
+  { href: '/settings', label: 'Settings', icon: Settings }
 ]
 
 export function Sidebar() {
