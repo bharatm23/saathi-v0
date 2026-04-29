@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Upload, CheckCircle2, Loader2 } from 'lucide-react'
 import { uploadReport } from '@/lib/api'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
-type Step = 1 | 2 | 3
+type Step = 1 | 2 | 3 | 4
 
 function SaathiLogo() {
   return (
@@ -23,7 +24,7 @@ function SaathiLogo() {
 function StepBar({ current }: { current: Step }) {
   return (
     <div className="flex items-center gap-2 w-40">
-      {([1, 2, 3] as Step[]).map(s => (
+      {([1, 2, 3, 4] as Step[]).map(s => (
         <div key={s} className="h-1 flex-1 rounded-full transition-colors duration-300"
           style={{ background: s <= current ? '#0F2D52' : '#E5E7EB' }} />
       ))}
@@ -32,6 +33,63 @@ function StepBar({ current }: { current: Step }) {
 }
 
 function Step1({ onNext }: { onNext: () => void }) {
+  const [name, setName] = useState('')
+  const [dob,  setDob]  = useState('')
+  const supabase = createClient()
+
+  async function save() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    // Pre-fill from Google if available
+    const googleName = user.user_metadata?.full_name ?? ''
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      full_name: name || googleName,
+      date_of_birth: dob || null,
+      updated_at: new Date().toISOString(),
+    })
+    document.cookie = 'onboarding_done=1; path=/; max-age=31536000'
+    onNext()
+  }
+
+  // Pre-fill from Google on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.full_name) setName(user.user_metadata.full_name)
+    })
+  }, [])
+
+  return (
+    <div className="max-w-lg mx-auto">
+      <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-1">Step 1 of 3 · Your profile</p>
+      <h2 className="text-3xl font-bold text-gray-900 mb-3">Tell us about yourself</h2>
+      <p className="text-base text-gray-500 mb-8">This helps Saathi contextualise your lab ranges correctly.</p>
+      <div className="space-y-4 mb-8">
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Full name</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date of birth <span className="text-gray-400 normal-case">(optional — helps contextualise lab ranges)</span></label>
+          <input type="date" value={dob} onChange={e => setDob(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <button onClick={() => { document.cookie = 'onboarding_done=1; path=/; max-age=31536000'; onNext() }}
+          className="text-sm text-gray-400 hover:text-gray-600">Skip for now</button>
+        <button onClick={save}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-white px-6 py-2.5 rounded-xl"
+          style={{ background: '#0F2D52' }}>
+          Continue <ArrowRight size={15} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Step2({ onNext }: { onNext: () => void }) {
   const DEVICES = [
     { id: 'fitbit',     label: 'Fitbit',     sub: 'Steps, sleep, heart rate', available: true },
     { id: 'garmin',     label: 'Garmin',     sub: 'Coming soon',              available: false },
@@ -80,7 +138,7 @@ function Step1({ onNext }: { onNext: () => void }) {
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'error'
 
-function Step2({ onNext }: { onNext: () => void }) {
+function Step3({ onNext }: { onNext: () => void }) {
   const [state,    setState]    = useState<UploadState>('idle')
   const [filename, setFilename] = useState('')
   const [dragging, setDragging] = useState(false)
@@ -156,7 +214,7 @@ function Step2({ onNext }: { onNext: () => void }) {
   )
 }
 
-function Step3({ onDone }: { onDone: () => void }) {
+function Step4({ onDone }: { onDone: () => void }) {
   const USECASES = [
     { title: 'Before every appointment', tag: 'Appointment Brief',
       body: 'Generate a one-page brief of your last 3 reports and 28 days of wearable data. Walk in knowing your numbers — not scrambling to remember them.' },
@@ -202,6 +260,7 @@ export default function OnboardingPage() {
   const router = useRouter()
 
   function goToDashboard() {
+    document.cookie = 'onboarding_done=1; path=/; max-age=31536000'
     router.replace('/')
   }
 
@@ -220,7 +279,8 @@ export default function OnboardingPage() {
       <div className="px-8 py-16">
         {step === 1 && <Step1 onNext={() => setStep(2)} />}
         {step === 2 && <Step2 onNext={() => setStep(3)} />}
-        {step === 3 && <Step3 onDone={goToDashboard} />}
+        {step === 3 && <Step3 onNext={() => setStep(4)} />}
+        {step === 4 && <Step4 onDone={goToDashboard} />}
       </div>
     </div>
   )

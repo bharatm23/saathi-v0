@@ -1,4 +1,3 @@
-// src/middleware.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -27,27 +26,26 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  // Allow public routes and Next.js internals
   if (PUBLIC_ROUTES.some(r => path.startsWith(r)) || path.startsWith('/_next') || path.startsWith('/api')) {
     return supabaseResponse
   }
 
-  // Not logged in → redirect to login
   if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/landing', request.url))
   }
 
-  // Logged in but no profile (needs onboarding) → redirect to onboarding
-  // Skip if already on onboarding
+  // Only redirect to onboarding if cookie not set AND no profile name
   if (!path.startsWith('/onboarding')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.full_name) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+    const onboardingDone = request.cookies.get('onboarding_done')?.value
+    if (!onboardingDone) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+      if (!profile?.full_name) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
     }
   }
 
