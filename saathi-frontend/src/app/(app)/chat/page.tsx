@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageShell } from "@/components/PageShell";
 import { Card } from "@/components/Card";
 import { Pill } from "@/components/Pill";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchChat } from "@/lib/api"
+import { createClient } from '@/lib/supabase'
 
 const DISCLAIMER = "Saathi shows your data · not medical advice";
 
@@ -19,6 +20,25 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const isEmpty = messages.length === 0;
+
+  const [meta, setMeta] = useState('')
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadMeta() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const name = user.user_metadata?.full_name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'You'
+      const { count: reportCount } = await supabase
+        .from('lab_reports').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      const { count: wearableCount } = await supabase
+        .from('wearable_snapshots').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+      const reportStr  = reportCount  ? `${reportCount} report${reportCount !== 1 ? 's' : ''}` : 'no reports'
+      const wearableStr = wearableCount ? `${wearableCount}d wearable` : 'no wearable'
+      setMeta(`${name} · ${reportStr} · ${wearableStr}`)
+    }
+    loadMeta()
+  }, [])
 
   async function send(text: string) {
     if (!text.trim()) return;
@@ -54,7 +74,7 @@ export default function ChatPage() {
   }
 
   return (
-    <PageShell title="Chat" meta="Priya · 4 reports · 28d wearable">
+    <PageShell title="Chat" meta>
       <div className="space-y-4 pb-6">
         {isEmpty ? (
           <StarterPrompts onPick={send} />

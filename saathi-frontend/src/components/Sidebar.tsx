@@ -33,7 +33,7 @@ export function Sidebar() {
         </svg>
         <div>
           <p className="text-white font-bold text-lg leading-none">Saathi</p>
-          <p className="text-blue-300 text-xs mt-0.5">Your family&apos;s health memory</p>
+          <p className="text-blue-300 text-[10px] mt-0.5">Your family&apos;s health memory</p>
         </div>
       </Link>
       <nav className="px-3 flex-1 space-y-1">

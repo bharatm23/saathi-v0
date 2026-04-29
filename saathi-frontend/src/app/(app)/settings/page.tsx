@@ -28,15 +28,22 @@ export default function SettingsPage() {
   const [newMember, setNewMember] = useState({ name: '', relation: 'Parent', phone: '', email: '', date_of_birth: '' })
   const router  = useRouter()
   const supabase = createClient()
+  const [editMember, setEditMember]   = useState<Member | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<Member | null>(null)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      const googleName = user.user_metadata?.full_name ?? ''
+      const googleEmail = user.email ?? ''
       const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if (p) setProfile({ full_name: p.full_name ?? '', date_of_birth: p.date_of_birth, gender: p.gender, email: user.email ?? '' })
-      const { data: m } = await supabase.from('family_members').select('*').eq('owner_id', user.id).order('created_at')
-      if (m) setMembers(m)
+      setProfile({
+        full_name: p?.full_name ?? googleName,
+        date_of_birth: p?.date_of_birth ?? null,
+        gender: p?.gender ?? null,
+        email: googleEmail,
+      })
     }
     load()
   }, [])
@@ -73,15 +80,6 @@ export default function SettingsPage() {
     <div className="flex min-h-full bg-gray-50">
       {/* Side nav */}
       <aside className="w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-3 sticky top-0 h-screen">
-        <div className="px-3 mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#0F2D52' }}>
-              <span className="text-white text-xs font-bold">S</span>
-            </div>
-            <span className="font-semibold text-gray-900">Saathi</span>
-          </div>
-          <p className="text-xs text-gray-400">Your family&apos;s health memory</p>
-        </div>
 
         <nav className="flex-1 space-y-0.5">
           {SECTIONS.map(s => {
@@ -98,13 +96,6 @@ export default function SettingsPage() {
             )
           })}
         </nav>
-
-        <div className="border-t border-gray-200 pt-3 mt-3 space-y-0.5">
-          <button onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors">
-            <LogOut size={16} /> Sign out
-          </button>
-        </div>
       </aside>
 
       {/* Main */}
@@ -188,11 +179,53 @@ export default function SettingsPage() {
                     <p className="text-sm text-gray-400">{m.relation}{m.date_of_birth ? ` · ${m.date_of_birth}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="text-gray-400 hover:text-gray-600 p-1 transition-colors"><Pencil size={14} /></button>
-                    <button onClick={() => deleteMember(m.id)} className="text-gray-400 hover:text-red-500 p-1 transition-colors"><Trash2 size={14} /></button>
+                    {/* here */}
+                    {editMember?.id === m.id && (
+                      <div className="px-6 pb-4 space-y-3 border-t border-gray-100 pt-4">
+                        <input type="text" value={editMember.name}
+                          onChange={e => setEditMember(p => p ? { ...p, name: e.target.value } : p)}
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none" />
+                        <select value={editMember.relation}
+                          onChange={e => setEditMember(p => p ? { ...p, relation: e.target.value } : p)}
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm bg-white focus:outline-none">
+                          {RELATIONS.map(r => <option key={r}>{r}</option>)}
+                        </select>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditMember(null)} className="text-sm text-gray-500">Cancel</button>
+                          <button onClick={async () => {
+                            await supabase.from('family_members').update({ name: editMember.name, relation: editMember.relation }).eq('id', editMember.id)
+                            setMembers(prev => prev.map(m => m.id === editMember.id ? { ...m, name: editMember.name, relation: editMember.relation } : m))
+                            setEditMember(null)
+                          }} className="text-sm font-medium text-white px-4 py-1.5 rounded-xl" style={{ background: '#0F2D52' }}>Save</button>
+                        </div>
+                      </div>
+                    )} 
+{/* here */}
+                    <button onClick={() => setEditMember(m)} className="text-gray-400 hover:text-gray-600 p-1 transition-colors"><Pencil size={14} /></button>
+                    <button onClick={() => setDeleteConfirm(m)} className="text-gray-400 hover:text-red-500 p-1 transition-colors"><Trash2 size={14} /></button>
                   </div>
                 </div>
               ))}
+              {deleteConfirm && (
+              <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+                  <p className="font-semibold text-gray-900 mb-2">Remove {deleteConfirm.name}?</p>
+                  <p className="text-sm text-gray-500 mb-6">Remove {deleteConfirm.name} from linked family members? Their reports will remain in your account.</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setDeleteConfirm(null)}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50">
+                      Cancel
+                    </button>
+                    <button onClick={async () => {
+                      await deleteMember(deleteConfirm.id)
+                      setDeleteConfirm(null)
+                    }} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                      Delete member
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             </div>
 
             {/* Add member */}
