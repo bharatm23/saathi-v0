@@ -20,16 +20,22 @@ export function Sidebar() {
 
   async function handleSignOut() {
     await signOut()
-    router.push('/login')
+    router.push('/landing')
     router.refresh()
   }
 
   return (
     <aside className="w-56 shrink-0 bg-navy text-white flex flex-col sticky top-0 h-screen">
-      <div className="px-5 pt-6 pb-8">
-        <div className="text-[18px] font-bold leading-none">Saathi</div>
-        <div className="text-[12px] text-blue-300/80 mt-1.5">Your family&apos;s health memory</div>
-      </div>
+      <Link href="/landing" className="flex items-center gap-2 px-5 pt-6 pb-8">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="white" fillOpacity="0.15"/>
+          <path d="M16 23s-7-4.5-7-9.5A4.5 4.5 0 0 1 16 10.5 4.5 4.5 0 0 1 23 13.5C23 18.5 16 23 16 23z" fill="white"/>
+        </svg>
+        <div>
+          <p className="text-white font-bold text-lg leading-none">Saathi</p>
+          <p className="text-blue-300 text-xs mt-0.5">Your family&apos;s health memory</p>
+        </div>
+      </Link>
       <nav className="px-3 flex-1 space-y-1">
         {items.map(it => {
           const active = it.href === '/' ? pathname === '/' : pathname.startsWith(it.href)

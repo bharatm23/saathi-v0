@@ -2,7 +2,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/landing', '/login', '/auth/callback']
+const PUBLIC_ROUTES = ['/landing', '/login', '/auth/callback', '/auth/confirm']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
