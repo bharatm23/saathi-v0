@@ -60,9 +60,9 @@ export default function LandingPage() {
           Your family&apos;s health,<br />remembered.
         </h1>
         <p className="text-lg text-gray-500 leading-relaxed mb-10 max-w-lg">
-          Saathi keeps every lab report, every wearable trend, every doctor&apos;s note
-          in one calm place — so you walk into the next appointment with the
-          answers, not the panic.
+          Saathi keeps every lab report, every wearable trend, every doctor&apos;s note 
+          in one place - so you walk into the next appointment better informed and 
+          proactive.
         </p>
         <div className="flex items-center gap-4 mb-6">
           {loggedIn ? (
@@ -79,14 +79,14 @@ export default function LandingPage() {
             </Link>
           )}
         </div>
-        <p className="text-xs text-gray-400">Free during beta · your data stays encrypted and private</p>
+        <p className="text-xs text-gray-400">Free for use · your data stays encrypted and private</p>
       </section>
 
       {/* Feature cards */}
       <section className="max-w-4xl mx-auto px-8 pb-24">
         <div className="grid grid-cols-3 gap-5">
           {[
-            { icon: FileText,      title: 'Upload once',      body: 'PDF, image, or typed. Saathi pulls the numbers automatically.' },
+            { icon: FileText,      title: 'Upload Lab reports',      body: 'Saathi pulls your pathology numbers automatically.' },
             { icon: MessageSquare, title: 'Ask anything',     body: 'Talk to your data. See where every answer came from.' },
             { icon: CalendarCheck, title: 'Walk in prepared', body: 'One-tap appointment briefs and weekly digests.' },
           ].map(({ icon: Icon, title, body }) => (
