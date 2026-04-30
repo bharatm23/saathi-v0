@@ -181,25 +181,59 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     {/* here */}
                     {editMember?.id === m.id && (
-                      <div className="px-6 pb-4 space-y-3 border-t border-gray-100 pt-4">
-                        <input type="text" value={editMember.name}
-                          onChange={e => setEditMember(p => p ? { ...p, name: e.target.value } : p)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none" />
-                        <select value={editMember.relation}
-                          onChange={e => setEditMember(p => p ? { ...p, relation: e.target.value } : p)}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm bg-white focus:outline-none">
-                          {RELATIONS.map(r => <option key={r}>{r}</option>)}
-                        </select>
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditMember(null)} className="text-sm text-gray-500">Cancel</button>
+                      <div className="px-6 pb-5 border-t border-gray-100 pt-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">First name</label>
+                            <input type="text" value={editMember.name.split(' ')[0]}
+                              onChange={e => setEditMember(p => p ? { ...p, name: e.target.value + ' ' + p.name.split(' ').slice(1).join(' ') } : p)}
+                              maxLength={50}
+                              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Last name</label>
+                            <input type="text" value={editMember.name.split(' ').slice(1).join(' ')}
+                              onChange={e => setEditMember(p => p ? { ...p, name: p.name.split(' ')[0] + ' ' + e.target.value } : p)}
+                              maxLength={50}
+                              className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-2">Relationship</label>
+                          <div className="flex flex-wrap gap-2">
+                            {RELATIONS.map(r => (
+                              <button key={r} onClick={() => setEditMember(p => p ? { ...p, relation: r } : p)}
+                                className="px-3 py-1.5 rounded-full text-sm border transition-colors"
+                                style={{ background: editMember.relation === r ? '#0F2D52' : '#fff', color: editMember.relation === r ? '#fff' : '#374151', borderColor: editMember.relation === r ? '#0F2D52' : '#D1D5DB' }}>
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date of birth</label>
+                          <input type="date"
+                            value={editMember.date_of_birth ?? ''}
+                            max={new Date().toISOString().split('T')[0]}
+                            min="1900-01-01"
+                            onChange={e => setEditMember(p => p ? { ...p, date_of_birth: e.target.value } : p)}
+                            className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none" />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-1">
+                          <button onClick={() => setEditMember(null)} className="text-sm text-gray-500 px-4 py-2">Cancel</button>
                           <button onClick={async () => {
-                            await supabase.from('family_members').update({ name: editMember.name, relation: editMember.relation }).eq('id', editMember.id)
-                            setMembers(prev => prev.map(m => m.id === editMember.id ? { ...m, name: editMember.name, relation: editMember.relation } : m))
+                            const cleanName = editMember.name.trim().replace(/[^a-zA-Z\s'-]/g, '')
+                            await supabase.from('family_members').update({
+                              name: cleanName, relation: editMember.relation, date_of_birth: editMember.date_of_birth || null
+                            }).eq('id', editMember.id)
+                            setMembers(prev => prev.map(mb => mb.id === editMember.id ? { ...mb, name: cleanName, relation: editMember.relation, date_of_birth: editMember.date_of_birth } : mb))
                             setEditMember(null)
-                          }} className="text-sm font-medium text-white px-4 py-1.5 rounded-xl" style={{ background: '#0F2D52' }}>Save</button>
+                          }} className="text-sm font-medium text-white px-5 py-2 rounded-xl" style={{ background: '#0F2D52' }}>
+                            Save changes
+                          </button>
                         </div>
                       </div>
-                    )} 
+                    )}
 {/* here */}
                     <button onClick={() => setEditMember(m)} className="text-gray-400 hover:text-gray-600 p-1 transition-colors"><Pencil size={14} /></button>
                     <button onClick={() => setDeleteConfirm(m)} className="text-gray-400 hover:text-red-500 p-1 transition-colors"><Trash2 size={14} /></button>
@@ -219,7 +253,8 @@ export default function SettingsPage() {
                     <button onClick={async () => {
                       await deleteMember(deleteConfirm.id)
                       setDeleteConfirm(null)
-                    }} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                    }} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white"
+                        style={{ background: '#DC2626' }}>
                       Delete member
                     </button>
                   </div>

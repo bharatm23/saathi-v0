@@ -484,6 +484,7 @@ async def ingest_lab_report(
     file_bytes: bytes,
     file_name: str,
     source: str = "upload",
+    member_id: str | None = None,
 ) -> dict:
     parser    = get_parser()
     documents = await parser.aload_data(file_bytes, extra_info={"file_name": file_name})
@@ -516,6 +517,7 @@ async def ingest_lab_report(
         lab_name=structured.get("lab_name"),
         file_name=file_name,
         source=source,
+        member_id=member_id,
     )
 
     return {

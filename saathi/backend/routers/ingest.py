@@ -38,6 +38,7 @@ class IngestFromStorageRequest(BaseModel):
     storage_path: str   # e.g. "user-id/filename.pdf"
     file_name: str
     user_id: str = ""   # fallback if no JWT
+    member_id: str | None = None
 
 
 @router.post("/report")
@@ -75,6 +76,7 @@ async def ingest_from_storage(
             file_bytes=file_bytes,
             file_name=payload.file_name,
             source="upload",
+            member_id=payload.member_id,
         )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))

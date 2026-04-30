@@ -36,6 +36,7 @@ async def insert_lab_report(
     lab_name: str | None = None,
     file_name: str | None = None,
     source: str = "upload",
+    member_id: str | None = None,
 ) -> dict:
     db = get_client()
     payload = {
@@ -51,6 +52,8 @@ async def insert_lab_report(
         payload["lab_name"] = lab_name
     if file_name:
         payload["file_name"] = file_name
+    if member_id:
+        payload["member_id"] = member_id
 
     result = db.table("lab_reports").insert(payload).execute()
     return result.data[0]

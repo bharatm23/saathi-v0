@@ -50,7 +50,7 @@ export async function fetchDigest(period: number) {
   return res.json()
 }
 
-export async function uploadReport(file: File) {
+export async function uploadReport(file: File, memberId?: string) {
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
@@ -77,6 +77,7 @@ export async function uploadReport(file: File) {
       storage_path: storagePath,
       file_name: file.name,
       user_id: userId,
+      member_id: memberId ?? null,
     }),
   })
 
