@@ -19,15 +19,15 @@ export async function getCachedMetrics(
 ) {
   const ttl = TTL_HOURS[period] ?? 24
   const { data } = await supabase
-    .from('wearable_cache')
-    .select('data, cached_at')
+    .from('wearable_syncs')
+    .select('data, upload_timestamp')
     .eq('user_id', userId).eq('provider', provider)
     .eq('endpoint_key', endpointKey).eq('period', period)
     .eq('sync_date', syncDate)
     .single()
 
   if (!data) return null
-  if (isStale(data.cached_at, ttl)) return null
+  if (isStale(data.upload_timestamp, ttl)) return null
   return data.data
 }
 
@@ -35,21 +35,21 @@ export async function setCachedMetrics(
   userId: string, provider: string, period: string,
   endpointKey: string, syncDate: string, metrics: any
 ) {
-  await supabase.from('wearable_cache').upsert({
+  await supabase.from('wearable_syncs').upsert({
     user_id: userId, provider, endpoint_key: endpointKey,
-    period, sync_date: syncDate, data: metrics, cached_at: new Date().toISOString()
+    period, sync_date: syncDate, data: metrics, upload_timestamp: new Date().toISOString()
   }, { onConflict: 'user_id,provider,endpoint_key,period,sync_date' })
 }
 
 export async function getCachedLLM(userId: string, cacheKey: string) {
   const { data } = await supabase
     .from('llm_cache')
-    .select('data, cached_at')
+    .select('data, upload_timestamp')
     .eq('user_id', userId).eq('cache_key', cacheKey)
     .single()
 
   if (!data) return null
-  if (isStale(data.cached_at, 24)) return null
+  if (isStale(data.upload_timestamp, 24)) return null
   return data.data
 }
 
@@ -71,7 +71,7 @@ export async function setCachedLLM(
 ) {
   await supabase.from('llm_cache').upsert({
     user_id: userId, cache_key: cacheKey, type, period,
-    data: result, cached_at: new Date().toISOString()
+    data: result, upload_timestamp: new Date().toISOString()
   }, { onConflict: 'user_id,cache_key' })
 }
 
