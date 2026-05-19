@@ -28,3 +28,6 @@ Thumbs.db
 # Keep examples
 !.env.example
 !.env.local.example
+
+saathi/supabase/
+*.sql

@@ -123,10 +123,6 @@ export async function GET(
       await setCachedMetrics(userId, id, period, endpointKey!, date, endpoint.transform(raw, period))
     }
   
-    const metricsFlat = endpoint
-  ? Object.fromEntries(endpoint.transform(raw, 'day').map((m: any) => [m.key, m.value]))
-  : {}
-  
     // ── Saathi wearable sync ──────────────────────────────────
     if (userId && id === 'fitbit' && period === 'day' && endpointKey !== 'sync' && endpointKey !== 'activityLog') {
       const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -142,23 +138,23 @@ export async function GET(
         .catch(e => console.log('🔴 Wearable sync failed:', e.message))
     }
     // Backfill historical snapshots from timeseries data
-    if (userId && id === 'fitbit' && period !== 'day' && endpointKey !== 'activityLog' && endpointKey !== 'sync') {
-      const transformed = endpoint.transform(raw, period)
-      const m = transformed[0]
-      if (m) {
-        const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-        fetch(`${SAATHI_API}/ingest/wearable/period`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-          user_id: userId,
-          date: anchorDate,
-          data: metricsFlat,
-          skip_raw: true,   // signal to not overwrite raw_data
-        }),
-        }).catch(() => {})
-      }
-    }
+    // if (userId && id === 'fitbit' && period !== 'day' && endpointKey !== 'activityLog' && endpointKey !== 'sync') {
+    //   const transformed = endpoint.transform(raw, period)
+    //   const m = transformed[0]
+    //   if (m) {
+    //     const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+    //     fetch(`${SAATHI_API}/ingest/wearable/period`, {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({
+    //       user_id: userId,
+    //       date: anchorDate,
+    //       data: metricsFlat,
+    //       skip_raw: true,   // signal to not overwrite raw_data
+    //     }),
+    //     }).catch(() => {})
+    //   }
+    // }
 
     return NextResponse.json({ metrics: endpoint.transform(raw, period) })
 }

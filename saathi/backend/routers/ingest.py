@@ -119,50 +119,56 @@ class PeriodWearablePayload(BaseModel):
     max: str | None = None
     trend: str | None = None
 
+# @router.post("/wearable/period")
+# async def ingest_wearable_period(request: Request):
+#     body = await request.json()
+#     print(f"🔵 Period payload raw: {body}")
+#     from db.client import get_client
+#     from datetime import datetime
+
+#     def clean(v: str | None) -> float | None:
+#         try:
+#             f = float(v)
+#             return f if f > 0 else None
+#         except (TypeError, ValueError):
+#             return None
+
+#     metrics_entry = {
+#         "avg": clean(payload.avg),
+#         "min": clean(payload.min),
+#         "max": clean(payload.max),
+#         "trend": payload.trend if payload.trend not in (None, "—") else None,
+#     }
+
+#     # Skip entirely if no usable data
+#     if all(v is None for v in [metrics_entry["avg"], metrics_entry["min"], metrics_entry["max"]]):
+#         return {"stored": False, "reason": "no valid data"}
+
+#     db = get_client()
+#     existing = db.table("wearable_period_summaries") \
+#         .select("metrics") \
+#         .eq("user_id", payload.user_id) \
+#         .eq("period", payload.period) \
+#         .eq("sync_date", payload.sync_date[:10]) \
+#         .eq("source", payload.source) \
+#         .execute()
+
+#     metrics = existing.data[0]["metrics"] if existing.data else {}
+#     metrics[payload.metric_key] = metrics_entry
+
+#     db.table("wearable_period_summaries").upsert({
+#         "user_id": payload.user_id,
+#         "period": payload.period,
+#         "sync_date": payload.sync_date[:10],
+#         "source": payload.source,
+#         "metrics": metrics,
+#         "cached_at": datetime.utcnow().isoformat(),
+#     }, on_conflict="user_id,period,sync_date,source").execute()
+
+#     return {"stored": True, "metric": payload.metric_key}
+
 @router.post("/wearable/period")
 async def ingest_wearable_period(request: Request):
-    body = await request.json()
-    print(f"🔵 Period payload raw: {body}")
-    from db.client import get_client
-    from datetime import datetime
-
-    def clean(v: str | None) -> float | None:
-        try:
-            f = float(v)
-            return f if f > 0 else None
-        except (TypeError, ValueError):
-            return None
-
-    metrics_entry = {
-        "avg": clean(payload.avg),
-        "min": clean(payload.min),
-        "max": clean(payload.max),
-        "trend": payload.trend if payload.trend not in (None, "—") else None,
-    }
-
-    # Skip entirely if no usable data
-    if all(v is None for v in [metrics_entry["avg"], metrics_entry["min"], metrics_entry["max"]]):
-        return {"stored": False, "reason": "no valid data"}
-
-    db = get_client()
-    existing = db.table("wearable_period_summaries") \
-        .select("metrics") \
-        .eq("user_id", payload.user_id) \
-        .eq("period", payload.period) \
-        .eq("sync_date", payload.sync_date[:10]) \
-        .eq("source", payload.source) \
-        .execute()
-
-    metrics = existing.data[0]["metrics"] if existing.data else {}
-    metrics[payload.metric_key] = metrics_entry
-
-    db.table("wearable_period_summaries").upsert({
-        "user_id": payload.user_id,
-        "period": payload.period,
-        "sync_date": payload.sync_date[:10],
-        "source": payload.source,
-        "metrics": metrics,
-        "cached_at": datetime.utcnow().isoformat(),
-    }, on_conflict="user_id,period,sync_date,source").execute()
-
-    return {"stored": True, "metric": payload.metric_key}
+    # Period data handled by wearable_cache in the frontend
+    # This endpoint is deprecated
+    return {"stored": False, "reason": "deprecated"}
