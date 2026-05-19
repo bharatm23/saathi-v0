@@ -477,6 +477,30 @@ def build_report_embedding_text(structured: dict, raw_text: str) -> str:
     parts.append(f"Report excerpt: {raw_text[:500]}")
     return " ".join(parts)
 
+async def ensure_family_member(user_id: str, patient_name: str | None, user_profile_name: str | None) -> str | None:
+    """If patient name differs from user's own name, auto-create a family member entry."""
+    if not patient_name or not patient_name.strip():
+        return None
+    if user_profile_name and patient_name.strip().lower() == user_profile_name.strip().lower():
+        return None  # it's the user themselves
+    
+    db = get_client()
+    # Check if already exists
+    existing = db.table("family_members") \
+        .select("id") \
+        .eq("owner_id", user_id) \
+        .ilike("name", patient_name.strip()) \
+        .execute()
+    if existing.data:
+        return existing.data[0]["id"]
+    
+    # Create new with empty relation
+    result = db.table("family_members").insert({
+        "owner_id": user_id,
+        "name": patient_name.strip(),
+        "relation": "",  # user fills later in settings
+    }).execute()
+    return result.data[0]["id"] if result.data else None
 
 @traceable(name="ingest-lab-report")
 async def ingest_lab_report(
@@ -519,6 +543,12 @@ async def ingest_lab_report(
         source=source,
         member_id=member_id,
     )
+
+    # Fetch user's profile name for comparison
+    profile = get_client().table("profiles").select("full_name").eq("id", user_id).single().execute()
+    profile_name = profile.data.get("full_name") if profile.data else None
+
+    member_id = member_id or await ensure_family_member(user_id, structured.get("patient_name"), profile_name)
 
     return {
         "success":           True,

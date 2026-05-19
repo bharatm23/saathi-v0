@@ -59,6 +59,7 @@ export async function GET(
   const syncDate = searchParams.get('syncDate')
   const period = (searchParams.get('period') ?? 'day') as Period
   const shift = parseInt(searchParams.get('shift') ?? '0')
+  const memberId = searchParams.get('memberId') ?? null
 
   const provider = providers[id as keyof typeof providers]
   if (!provider) return NextResponse.json({ error: 'Unknown provider' }, { status: 400 })
@@ -136,6 +137,7 @@ export async function GET(
             sync_date: anchorDate,
             endpoint_key: endpointKey,
             metrics: transformed,
+            member_id: memberId
           }),
         }).catch(() => {})
       }
@@ -152,28 +154,9 @@ export async function GET(
       fetch(`${SAATHI_API}/ingest/wearable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, date: anchorDate, data: metricsFlat }),
+        body: JSON.stringify({ user_id: userId, date: anchorDate, data: metricsFlat, member_id: memberId }),
       }).then(r => console.log('🟢 Wearable sync response:', r.status))
         .catch(e => console.log('🔴 Wearable sync failed:', e.message))
     }
-    // Backfill historical snapshots from timeseries data
-    // if (userId && id === 'fitbit' && period !== 'day' && endpointKey !== 'activityLog' && endpointKey !== 'sync') {
-    //   const transformed = endpoint.transform(raw, period)
-    //   const m = transformed[0]
-    //   if (m) {
-    //     const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-    //     fetch(`${SAATHI_API}/ingest/wearable/period`, {
-    //       method: 'POST',
-    //       headers: { 'Content-Type': 'application/json' },
-    //       body: JSON.stringify({
-    //       user_id: userId,
-    //       date: anchorDate,
-    //       data: metricsFlat,
-    //       skip_raw: true,   // signal to not overwrite raw_data
-    //     }),
-    //     }).catch(() => {})
-    //   }
-    // }
-
     return NextResponse.json({ metrics: endpoint.transform(raw, period) })
 }

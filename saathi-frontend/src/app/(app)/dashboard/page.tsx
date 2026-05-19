@@ -4,6 +4,8 @@ import { useSearchParams } from 'next/navigation'
 import { tokens, cardStyle, snapshotStyle } from '@/lib/design-tokens'
 import { Period, HealthMetric } from '@/lib/providers/types'
 import { buildDashboardConfig, buildInsightsSummary, DashboardConfig } from '@/lib/layout'
+import { createClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 const DATA_ENDPOINTS = ['steps','calories','distance','activeMinutes','heartrate','sleep','weight','activityLog']
 
@@ -1306,10 +1308,15 @@ function extractSyncDate(iso: string): string {
   catch { return new Date().toISOString().split('T')[0] }
 }
 
+type Member = { id: string; name: string; relation: string; isSelf?: boolean };
+
 // ─── Main ─────────────────────────────────────────────────────
 function DashboardInner() {
   const params = useSearchParams()
   const provider = params.get('connected') ?? 'fitbit'
+  const [members,   setMembers]   = useState<Member[]>([])
+  const [forMember, setForMember] = useState<Member | null>(null)
+  const supabase = createClient()
   const [period, setPeriod] = useState<Period>('day')
   const [metrics, setMetrics] = useState<HealthMetric[]>([])
   const [config, setConfig] = useState<DashboardConfig | null>(null)
@@ -1324,6 +1331,21 @@ function DashboardInner() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [tones, setTones] = useState<Tone[]>(['companion' as Tone, 'analyst' as Tone])
   const [prevMetricsMap, setPrevMetricsMap] = useState<Record<string, DataPoint[]>>({})
+  
+  const memberParam = forMember && !forMember.isSelf ? `&memberId=${forMember.id}` : ''
+
+  useEffect(() => {
+    async function loadMembers() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const name = user.user_metadata?.full_name?.split(' ')[0] ?? 'You'
+      const self: Member = { id: user.id, name, relation: 'Self', isSelf: true }
+      const { data: fam } = await supabase.from('family_members').select('*').eq('owner_id', user.id)
+      setMembers([self, ...(fam ?? []).map(m => ({ id: m.id, name: m.name, relation: m.relation }))])
+      setForMember(self)
+    }
+    loadMembers()
+  }, [])
 
   useEffect(() => {
     fetch('/api/data/' + provider + '?endpoint=sync')
@@ -1342,7 +1364,7 @@ function DashboardInner() {
     const map: Record<string, DataPoint[]> = {}
     for (const ep of DATA_ENDPOINTS.filter(e => e !== 'sync' && e !== 'activityLog')) {
       try {
-        const r = await fetch('/api/data/' + provider + '?endpoint=' + ep + '&syncDate=' + sd + '&period=' + p + '&shift=' + shift)
+        const r = await fetch('/api/data/' + provider + '?endpoint=' + ep + '&syncDate=' + sd + '&period=' + p + '&shift=' + shift + memberParam)
         if (r.ok) {
           const { metrics: ms } = await r.json()
           for (const m of ms) { if ((m.dataPoints?.length ?? 0) >= 2) map[m.key] = m.dataPoints }
@@ -1381,7 +1403,7 @@ function DashboardInner() {
     const all: HealthMetric[] = []
     for (let i = 0; i < DATA_ENDPOINTS.length; i++) {
       try {
-        const r = await fetch('/api/data/' + provider + '?endpoint=' + DATA_ENDPOINTS[i] + '&syncDate=' + sd + '&period=' + p)
+        const r = await fetch('/api/data/' + provider + '?endpoint=' + DATA_ENDPOINTS[i] + '&syncDate=' + sd + '&period=' + p + memberParam)
         if (r.ok) {
           const { metrics: ms } = await r.json()
           if (DATA_ENDPOINTS[i] === 'activityLog') {
@@ -1400,7 +1422,8 @@ function DashboardInner() {
     fetchInsights(all.filter(m => m.key !== 'activityLog'), pm ?? {}, p)
   }, [provider, fetchComp, fetchInsights])
 
-  useEffect(() => { if (syncDate) fetchData(period, syncDate) }, [period, syncDate, fetchData])
+  // useEffect(() => { if (syncDate) fetchData(period, syncDate) }, [period, syncDate, fetchData])
+  useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'
@@ -1442,6 +1465,29 @@ function DashboardInner() {
             </a>
           </div>
         </div>
+
+        {members.length > 1 && (
+        <div className="flex items-center gap-2 flex-wrap mb-4">
+          <span className="text-[12px] text-gray-400 uppercase tracking-wide font-medium mr-1">FOR</span>
+          {members.map(m => (
+            <button key={m.id} onClick={() => setForMember(m)}
+              className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full border text-[13px] transition-colors",
+                forMember?.id === m.id
+                  ? "border-navy bg-navy text-white font-medium"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+              )}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                style={{ background: forMember?.id === m.id ? "rgba(255,255,255,0.3)" : "#9CA3AF", color: "white" }}>
+                {m.name.split(' ').map((n:string) => n[0]).join('').slice(0,2)}
+              </span>
+              {m.name}
+              <span className={cn("text-[11px]", forMember?.id === m.id ? "text-blue-200" : "text-gray-400")}>
+                · {m.isSelf ? 'You' : m.relation}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
         {/* Progress bar */}
         {loading && (

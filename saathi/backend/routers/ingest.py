@@ -91,6 +91,7 @@ class WearablePayload(BaseModel):
     date: str
     data: dict
     skip_raw: bool = False
+    member_id: str | None = None
 
 @router.post("/wearable")
 async def ingest_wearable(payload: WearablePayload):
@@ -101,6 +102,7 @@ async def ingest_wearable(payload: WearablePayload):
             user_id=payload.user_id,
             snapshot_date=snapshot_date,
             raw_fitbit_response={} if payload.skip_raw else payload.data,
+            member_id=payload.member_id,
         )
         print(f"🟢 sync_day result: {result}")
         return result

@@ -99,6 +99,7 @@ async def upsert_wearable_snapshot(
     raw_data: dict,
     embedding: list[float],
     source: str = "fitbit",
+    member_id: str | None = None
 ) -> dict:
     """
     Insert or update a wearable snapshot for a given user + date.
@@ -115,9 +116,11 @@ async def upsert_wearable_snapshot(
     }
     if raw_data:  # only include if non-empty
         payload["raw_data"] = raw_data
+    if member_id:
+        payload["member_id"] = member_id
     result = (
         db.table("wearable_snapshots")
-        .upsert(payload, on_conflict="user_id,date,source")
+        .upsert(payload, on_conflict="user_id,date,source,member_id")
         .execute()
     )
     return result.data[0]

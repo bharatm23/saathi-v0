@@ -135,6 +135,7 @@ async def sync_day(
     snapshot_date: date,
     raw_fitbit_response: dict,
     source: str = "fitbit",
+    member_id=None,
 ) -> dict:
     """
     Call this function from your existing Fitbit sync route after
@@ -162,7 +163,6 @@ async def sync_day(
 
     embedding_text = build_embedding_text(snapshot_date, metrics, raw_fitbit_response)
     embedding = await embed_text(embedding_text)
-
     stored = await upsert_wearable_snapshot(
         user_id=user_id,
         snapshot_date=snapshot_date,
@@ -170,6 +170,7 @@ async def sync_day(
         raw_data=raw_fitbit_response,
         embedding=embedding,
         source=source,
+        member_id=member_id,
     )
 
     return {"stored": True, "date": snapshot_date.isoformat(), "metrics_saved": list(metrics.keys())}
