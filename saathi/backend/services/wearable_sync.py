@@ -154,6 +154,7 @@ async def sync_day(
     -------------------------------------------------------
     """
     metrics = normalise_metrics(raw_fitbit_response)
+    print(f"🔵 sync_day called: user={user_id} date={snapshot_date} raw_keys={list(raw_fitbit_response.keys())} normalised={metrics}")
 
     if not metrics:
         # Nothing we can store from this response — skip
