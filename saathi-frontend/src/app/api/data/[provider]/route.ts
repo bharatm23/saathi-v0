@@ -130,6 +130,7 @@ export async function GET(
       const metricsFlat = Object.fromEntries(
         endpoint.transform(raw, 'day').map((m: any) => [m.key, m.value])
       )
+      console.log('🔵 Day sync — endpointKey:', endpointKey, 'metricsFlat:', JSON.stringify(metricsFlat))
       fetch(`${SAATHI_API}/ingest/wearable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
