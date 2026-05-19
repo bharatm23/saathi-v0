@@ -172,3 +172,35 @@ async def ingest_wearable_period(request: Request):
     # Period data handled by wearable_cache in the frontend
     # This endpoint is deprecated
     return {"stored": False, "reason": "deprecated"}
+
+class WearableSummaryPayload(BaseModel):
+    user_id: str
+    period: str
+    sync_date: str
+    endpoint_key: str
+    metrics: list[dict]
+
+@router.post("/wearable/summary")
+async def ingest_wearable_summary(payload: WearableSummaryPayload):
+    try:
+        from services.wearable_sync import embed_text, build_embedding_text
+        from db.client import get_client
+        from datetime import date as date_type
+
+        summary_text = f"Fitbit {payload.period} summary for {payload.sync_date}. "
+        summary_text += " ".join(
+            f"{m.get('key','')}: {m.get('avg') or m.get('value','')} {m.get('unit','')}"
+            for m in payload.metrics if m.get('value') not in ('—', '', None)
+        )
+        embedding = await embed_text(summary_text)
+        db = get_client()
+        db.table("wearable_snapshots").upsert({
+            "user_id": payload.user_id,
+            "date": payload.sync_date,
+            "source": f"fitbit_{payload.period}",
+            "raw_data": {"period": payload.period, "endpoint": payload.endpoint_key, "metrics": payload.metrics},
+            "embedding": embedding,
+        }, on_conflict="user_id,date,source").execute()
+        return {"stored": True}
+    except Exception as e:
+        return {"stored": False, "error": str(e)}

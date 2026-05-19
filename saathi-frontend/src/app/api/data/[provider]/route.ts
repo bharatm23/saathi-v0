@@ -122,6 +122,24 @@ export async function GET(
     if (userId && endpointKey !== 'sync') {
       await setCachedMetrics(userId, id, period, endpointKey!, date, endpoint.transform(raw, period))
     }
+
+    if (userId && id === 'fitbit' && period !== 'day' && endpointKey !== 'sync' && endpointKey !== 'activityLog') {
+      const SAATHI_API = process.env.SAATHI_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+      const transformed = endpoint.transform(raw, period)
+      if (transformed.length > 0) {
+        fetch(`${SAATHI_API}/ingest/wearable/summary`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            period,
+            sync_date: anchorDate,
+            endpoint_key: endpointKey,
+            metrics: transformed,
+          }),
+        }).catch(() => {})
+      }
+    }
   
     // ── Saathi wearable sync ──────────────────────────────────
     if (userId && id === 'fitbit' && period === 'day' && endpointKey !== 'sync' && endpointKey !== 'activityLog') {

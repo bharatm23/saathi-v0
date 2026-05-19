@@ -64,24 +64,6 @@ FIELD_MAP = {
     "weightKg":        "weight_kg",
 }
 
-
-# def normalise_metrics(raw: dict) -> dict:
-#     """
-#     Convert a raw Fitbit API response dict to Supabase column names.
-#     Only populated fields are returned — null values are excluded
-#     so the upsert doesn't overwrite good data with nulls.
-#     """
-#     metrics: dict[str, Any] = {}
-#     for raw_key, col in FIELD_MAP.items():
-#         if raw_key in raw and raw[raw_key] is not None:
-#             val = raw[raw_key]
-#             # Convert minutes to hours for sleep fields
-#             if col == "sleep_hours" and val > 24:
-#                 val = round(val / 60, 2)
-#             metrics[col] = val
-#     return metrics
-
-
 def build_embedding_text(snapshot_date: date, metrics: dict, raw: dict) -> str:
     """
     Build a natural-language string from the snapshot for embedding.
@@ -114,20 +96,38 @@ async def embed_text(text: str) -> list[float]:
     )
     return response.data[0].embedding
 
+
+INTEGER_COLS = {"steps", "calories", "active_minutes", "resting_hr", "sleep_efficiency"}
+
 def normalise_metrics(raw: dict) -> dict:
     metrics: dict[str, Any] = {}
     for raw_key, col in FIELD_MAP.items():
         if raw_key in raw and raw[raw_key] is not None:
             try:
-                val = float(raw[raw_key])  # always cast to float first
+                val = float(raw[raw_key])
             except (TypeError, ValueError):
                 continue
             if val <= 0:
                 continue
             if col == "sleep_hours" and val > 24:
                 val = round(val / 60, 2)
-            metrics[col] = val
+            metrics[col] = int(val) if col in INTEGER_COLS else val
     return metrics
+
+# def normalise_metrics(raw: dict) -> dict:
+#     metrics: dict[str, Any] = {}
+#     for raw_key, col in FIELD_MAP.items():
+#         if raw_key in raw and raw[raw_key] is not None:
+#             try:
+#                 val = float(raw[raw_key])  # always cast to float first
+#             except (TypeError, ValueError):
+#                 continue
+#             if val <= 0:
+#                 continue
+#             if col == "sleep_hours" and val > 24:
+#                 val = round(val / 60, 2)
+#             metrics[col] = val
+#     return metrics
 
 @traceable(name="sync-wearable-day")
 async def sync_day(
