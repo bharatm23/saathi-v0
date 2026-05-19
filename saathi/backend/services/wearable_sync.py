@@ -21,13 +21,13 @@ from config import settings
 from db.client import upsert_wearable_snapshot
 
 # #openAI rate limit reached
-# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+openai = AsyncOpenAI(api_key=settings.openai_api_key)
 
-# Option 1: OpenRouter (active)
-openai = AsyncOpenAI(
-    api_key=settings.openrouter_api_key,
-    base_url="https://openrouter.ai/api/v1",
-)
+# # Option 1: OpenRouter (active)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
 
 # Option 2: Direct OpenAI (fallback)
 # openai = AsyncOpenAI(api_key=settings.openai_api_key)

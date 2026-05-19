@@ -11,17 +11,17 @@ from db.client import get_lab_reports, get_wearable_snapshots
 
 router = APIRouter()
 
-# #openAI limit reached
-# openai = AsyncOpenAI(api_key=settings.openai_api_key)
-# Option 1: OpenRouter (active)
-openai = AsyncOpenAI(
-    api_key=settings.openrouter_api_key,
-    base_url="https://openrouter.ai/api/v1",
-)
+# # #openAI limit reached
+# # openai = AsyncOpenAI(api_key=settings.openai_api_key)
+# # Option 1: OpenRouter (active)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
 
 # Option 2: Direct OpenAI (fallback)
-# openai = AsyncOpenAI(api_key=settings.openai_api_key)
-# MODEL = "gpt-4o"
+openai = AsyncOpenAI(api_key=settings.openai_api_key)
+MODEL = "gpt-4o"
 
 # Option 3: Claude via OpenRouter (second fallback)
 # openai = AsyncOpenAI(

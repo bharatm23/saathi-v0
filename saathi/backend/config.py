@@ -4,8 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     supabase_url: str
     supabase_service_key: str
-    # openai_api_key: str
-    openrouter_api_key: str
+    openai_api_key: str
+    # openrouter_api_key: str
     llama_cloud_api_key: str
     langchain_api_key: str = ""
     langchain_tracing_v2: str = "false"

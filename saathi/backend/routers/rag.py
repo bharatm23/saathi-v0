@@ -36,13 +36,13 @@ from services.wearable_sync import embed_text
 router = APIRouter()
 
 # openAI limit reached
-# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+openai = AsyncOpenAI(api_key=settings.openai_api_key)
 
-# Option 1: OpenRouter (active)
-openai = AsyncOpenAI(
-    api_key=settings.openrouter_api_key,
-    base_url="https://openrouter.ai/api/v1",
-)
+# # Option 1: OpenRouter (active)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
 
 # Option 2: Direct OpenAI (fallback)
 # openai = AsyncOpenAI(api_key=settings.openai_api_key)

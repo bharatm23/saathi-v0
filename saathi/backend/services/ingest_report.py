@@ -22,13 +22,13 @@ from db.client import insert_lab_report
 from services.wearable_sync import embed_text
 
 # # rate limit reached
-# openai = AsyncOpenAI(api_key=settings.openai_api_key)
+openai = AsyncOpenAI(api_key=settings.openai_api_key)
 _parser: LlamaParse | None = None
 
-openai = AsyncOpenAI(
-    api_key=settings.openrouter_api_key,
-    base_url="https://openrouter.ai/api/v1",
-)
+# openai = AsyncOpenAI(
+#     api_key=settings.openrouter_api_key,
+#     base_url="https://openrouter.ai/api/v1",
+# )
 # MODEL = "openai/gpt-4o"
 
 # Option 2: Direct OpenAI (fallback)

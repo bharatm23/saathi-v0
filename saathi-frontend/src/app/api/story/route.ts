@@ -6,13 +6,13 @@ import { createHash } from 'crypto'
 // import { AsyncOpenAI } from 'openai' 
 
 // openAI rate limit hit
-// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Option 1: OpenRouter (active)
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-})
+// const openai = new OpenAI({ 
+//   apiKey: process.env.OPENROUTER_API_KEY,
+//   baseURL: "https://openrouter.ai/api/v1",
+// })
 
 
 const TONE_MAP: Record<string, string> = {
