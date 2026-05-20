@@ -281,11 +281,6 @@ export default function ReportsPage() {
                 <Loader2 size={11} className="animate-spin" /> Extracting metrics…
               </div>
             )}
-            {r.status === "uploading" && (
-              <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-blue">
-                <Loader2 size={11} className="animate-spin" /> Extracting metrics…
-              </div>
-            )}
             {r.status === "error" && <div className="text-[12px] text-amber mt-0.5">{r.error ?? "Upload failed"}</div>}
           </div>
         </Card>
