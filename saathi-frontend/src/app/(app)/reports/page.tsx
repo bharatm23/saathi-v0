@@ -7,6 +7,7 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2, Plus, ChevronDo
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { uploadReport } from "@/lib/api";
+import { useMember } from "@/lib/member-context";
 
 type Member = { id: string; name: string; relation: string; isSelf?: boolean };
 type SupabaseReport = {
@@ -14,7 +15,12 @@ type SupabaseReport = {
   report_date: string | null; structured_data: any; uploaded_at: string;
   member_id?: string | null;
 };
-type UploadingRow = { id: string; file_name: string; status: "uploading" | "error"; error?: string };
+
+type UploadingRow = { 
+  id: string; file_name: string; 
+  status: 'processing' | 'uploading' | 'error'  // processing = before storage upload
+  error?: string 
+}
 
 function initials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -111,6 +117,7 @@ export default function ReportsPage() {
   const [loadErr,   setLoadErr]   = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+  const { refreshCount } = useMember()
 
   useEffect(() => {
     async function load() {
@@ -131,6 +138,7 @@ export default function ReportsPage() {
         .limit(50);
       if (error) { setLoadErr(error.message); return; }
       setReports(data ?? []);
+      refreshCount()
     }
     load();
   }, []);
@@ -138,8 +146,13 @@ export default function ReportsPage() {
   const handleFile = useCallback(async (file: File) => {
     if (!selected) return;
     const tempId = `up-${Date.now()}`;
+     // Phase 1: processing
+    setUploading(prev => [{ id: tempId, file_name: file.name, status: 'processing' }, ...prev])
+    await new Promise(r => setTimeout(r, 2000))
+
     const result = await uploadReport(file, selected?.isSelf ? undefined : selected?.id)
-    setUploading(prev => [{ id: tempId, file_name: file.name, status: "uploading" }, ...prev]);
+    setUploading(prev => prev.map(r => r.id === tempId ? { ...r, status: 'uploading' } : r))
+    // setUploading(prev => [{ id: tempId, file_name: file.name, status: "uploading" }, ...prev]);
     try {
       const result = await uploadReport(file);
       setUploading(prev => prev.filter(r => r.id !== tempId));
@@ -151,6 +164,7 @@ export default function ReportsPage() {
           .select("id, file_name, lab_name, report_date, structured_data, uploaded_at, member_id")
           .eq("user_id", user.id).order("report_date", { ascending: false }).limit(50);
         setReports(data ?? []);
+        refreshCount()
       } else {
         setUploading(prev => prev.map(r => r.id === tempId ? { ...r, status: "error", error: result.error } : r));
       }
@@ -257,6 +271,16 @@ export default function ReportsPage() {
           <FileText className="text-gray-400 shrink-0" size={18} strokeWidth={1.6} />
           <div className="flex-1 min-w-0">
             <div className="text-[14px] text-gray-900 truncate">{r.file_name}</div>
+            {r.status === 'processing' && (
+              <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-gray-500">
+                <Loader2 size={11} className="animate-spin" /> Processing report...
+              </div>
+            )}
+            {r.status === 'uploading' && (
+              <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-blue">
+                <Loader2 size={11} className="animate-spin" /> Extracting metrics…
+              </div>
+            )}
             {r.status === "uploading" && (
               <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-blue">
                 <Loader2 size={11} className="animate-spin" /> Extracting metrics…

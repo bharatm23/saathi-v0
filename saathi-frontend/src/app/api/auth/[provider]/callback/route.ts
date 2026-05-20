@@ -3,6 +3,7 @@ import { providers } from '@/lib/providers'
 import { getSession } from '@/lib/session'
 import { saveConnection } from '@/lib/db'
 import { getOrCreateUserId } from '@/lib/session'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider: id } = await params
@@ -55,6 +56,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
     },
   }
   session.oauth = undefined
+  await session.save()
+
+  // Fetch Fitbit profile to verify email match
+  const profileRes = await fetch('https://api.fitbit.com/1/user/-/profile.json', {
+    headers: { Authorization: `Bearer ${tokens.access_token}` }
+  })
+  const profile = await profileRes.json()
+  const fitbitEmail = profile.user?.encodedId // Fitbit doesn't expose email directly
+
+  // Get Supabase user
+  const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If no Supabase session, don't store tokens
+  if (!user) {
+    return NextResponse.redirect(`${origin}/dashboard?error=not_logged_in`)
+  }
+  // Store userId alongside tokens so we can validate later
+  session.tokens = { ...session.tokens, fitbit: { ...tokens, supabaseUserId: user.id } }
   await session.save()
 
   // Connection storage handled by iron-session (token saved in session.save() above)

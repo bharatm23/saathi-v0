@@ -11,6 +11,11 @@ async function getValidToken(session: any, id: string, provider: any): Promise<s
   if (id === 'ultrahuman') return t.accessToken ?? null
   if (Date.now() < t.expiresAt - 60_000) return t.accessToken
 
+  const supabaseUserId = await getSupabaseUserId()
+  if (t.supabaseUserId && supabaseUserId && t.supabaseUserId !== supabaseUserId) {
+    return null // Token belongs to different user
+  }
+  
   const res = await fetch(provider.tokenUrl, {
     method: 'POST',
     headers: {

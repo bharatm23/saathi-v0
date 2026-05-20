@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 
 export type Member = {
@@ -10,6 +10,15 @@ export type Member = {
   isSelf?: boolean
 }
 
+// type MemberContextType = {
+//   members: Member[]
+//   selected: Member | null
+//   setSelected: (m: Member) => void
+//   reportCount: number
+//   connectedDevices: string[]
+//   loading: boolean
+// }
+
 type MemberContextType = {
   members: Member[]
   selected: Member | null
@@ -17,11 +26,22 @@ type MemberContextType = {
   reportCount: number
   connectedDevices: string[]
   loading: boolean
+  refreshCount: () => Promise<void>
 }
 
+// const MemberContext = createContext<MemberContextType>({
+//   members: [], selected: null, setSelected: () => {},
+//   reportCount: 0, connectedDevices: [], loading: true,
+// })
+
 const MemberContext = createContext<MemberContextType>({
-  members: [], selected: null, setSelected: () => {},
-  reportCount: 0, connectedDevices: [], loading: true,
+  members: [],
+  selected: null,
+  setSelected: () => {},
+  reportCount: 0,
+  connectedDevices: [],
+  loading: true,
+  refreshCount: async () => {},
 })
 
 export function MemberProvider({ children }: { children: ReactNode }) {
@@ -31,6 +51,19 @@ export function MemberProvider({ children }: { children: ReactNode }) {
   const [connectedDevices, setConnectedDevices] = useState<string[]>([])
   const [loading,          setLoading]          = useState(true)
   const supabase = createClient()
+
+  const refreshCount = useCallback(async () => {
+    if (!selected) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const q = selected.isSelf
+      ? supabase.from('lab_reports').select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id).is('member_id', null)
+      : supabase.from('lab_reports').select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('member_id', selected.id)
+    const { count } = await q
+    setReportCount(count ?? 0)
+  }, [selected])
 
   useEffect(() => {
     async function load() {
@@ -92,7 +125,20 @@ export function MemberProvider({ children }: { children: ReactNode }) {
   }, [selected])
 
   return (
-    <MemberContext.Provider value={{ members, selected, setSelected, reportCount, connectedDevices, loading }}>
+    // <MemberContext.Provider value={{ members, selected, setSelected, reportCount, connectedDevices, loading }}>
+    //   {children}
+    // </MemberContext.Provider>
+    <MemberContext.Provider
+      value={{
+        members,
+        selected,
+        setSelected,
+        reportCount,
+        connectedDevices,
+        loading,
+        refreshCount,
+      }}
+    >
       {children}
     </MemberContext.Provider>
   )

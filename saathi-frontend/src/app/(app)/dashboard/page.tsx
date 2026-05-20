@@ -1423,7 +1423,19 @@ function DashboardInner() {
   }, [provider, fetchComp, fetchInsights])
 
   // useEffect(() => { if (syncDate) fetchData(period, syncDate) }, [period, syncDate, fetchData])
-  useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
+  const isSelf = !forMember || forMember.isSelf
+  if (!isSelf) return
+    useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
+  
+  if (!isSelf) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <p className="text-sm text-gray-500">{forMember?.name} hasn&apos;t connected a wearable yet.</p>
+      <a href="/connect" className="text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
+        style={{ background: '#0F2D52' }}>
+        Connect their device
+      </a>
+    </div>
+  )
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'
