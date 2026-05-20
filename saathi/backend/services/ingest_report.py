@@ -18,7 +18,7 @@ from llama_parse import LlamaParse
 from openai import AsyncOpenAI
 
 from config import settings
-from db.client import insert_lab_report
+from db.client import insert_lab_report, get_client
 from services.wearable_sync import embed_text
 
 # # rate limit reached
