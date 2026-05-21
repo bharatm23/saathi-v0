@@ -1332,23 +1332,6 @@ function DashboardInner() {
   const [prevMetricsMap, setPrevMetricsMap] = useState<Record<string, DataPoint[]>>({})
   const { selected: forMember } = useMember()
   const isSelf = !forMember || forMember.isSelf === true
-  
-  if (!isSelf) return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: tokens.bg }}>
-      <div className="text-center space-y-3">
-        <p className="text-sm" style={{ color: tokens.textSecondary }}>
-          {forMember?.name} hasn&apos;t connected a wearable device yet.
-        </p>
-        <a
-          href="/connect"
-          className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
-          style={{ background: tokens.textPrimary }}
-        >
-          Connect their device
-        </a>
-      </div>
-    </div>
-  )
 
   const memberParam = forMember && !forMember.isSelf ? `&memberId=${forMember.id}` : ''
 
@@ -1445,11 +1428,11 @@ function DashboardInner() {
   // if (!isSelf) return
   //   useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
 
-  // useEffect(() => {
-  //   if (syncDate && forMember !== undefined) {
-  //     fetchData(period, syncDate)
-  //   }
-  // }, [period, syncDate, forMember, fetchData])
+  useEffect(() => {
+    if (syncDate && forMember !== undefined) {
+      fetchData(period, syncDate)
+    }
+  }, [period, syncDate, forMember, fetchData])
 
   useEffect(() => { 
     if (syncDate && isSelf) fetchData(period, syncDate) 
@@ -1457,6 +1440,23 @@ function DashboardInner() {
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'
+
+  if (!isSelf) return (
+    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: tokens.bg }}>
+      <div className="text-center space-y-3">
+        <p className="text-sm" style={{ color: tokens.textSecondary }}>
+          {forMember?.name} hasn&apos;t connected a wearable device yet.
+        </p>
+        <a
+          href="/connect"
+          className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
+          style={{ background: tokens.textPrimary }}
+        >
+          Connect their device
+        </a>
+      </div>
+    </div>
+  )
 
   return (
   <div className="min-h-screen" style={{ backgroundColor: tokens.bg }}>
