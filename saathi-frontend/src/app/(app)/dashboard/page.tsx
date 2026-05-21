@@ -1478,7 +1478,7 @@ function DashboardInner() {
           </div>
         </div>
 
-        {members.length > 1 && (
+        {/* {members.length > 1 && (
         <div className="flex items-center gap-2 flex-wrap mb-4">
           <span className="text-[12px] text-gray-400 uppercase tracking-wide font-medium mr-1">FOR</span>
           {members.map(m => (
@@ -1499,7 +1499,7 @@ function DashboardInner() {
             </button>
           ))}
         </div>
-      )}
+      )} */}
 
         {/* Progress bar */}
         {loading && (

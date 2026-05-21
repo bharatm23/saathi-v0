@@ -13,7 +13,7 @@ type Member = { id: string; name: string; relation: string; isSelf?: boolean };
 type SupabaseReport = {
   id: string; file_name: string; lab_name: string | null;
   report_date: string | null; structured_data: any; uploaded_at: string;
-  member_id?: string | null;
+  member_id?: string | null; member_name?: string | null;
 };
 
 type UploadingRow = { 
@@ -103,6 +103,20 @@ function ReportRow({ report }: { report: SupabaseReport }) {
           )}
         </div>
       )}
+      {/* Member pill - bottom right */}
+      {(() => {
+        const memberName = report.member_name
+        if (!memberName) return null
+        const display = memberName.split(' ')[0].slice(0, 10)
+        return (
+          <div className="flex justify-end mt-2">
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+              style={{ background: '#EFF6FF', color: '#1A56A0' }}>
+              {display}
+            </span>
+          </div>
+        )
+      })()}
     </Card>
   );
 }
@@ -132,7 +146,7 @@ export default function ReportsPage() {
       setSelected(self);
 
       const { data, error } = await supabase.from("lab_reports")
-        .select("id, file_name, lab_name, report_date, structured_data, uploaded_at, member_id")
+        .select("id, file_name, lab_name, report_date, structured_data, uploaded_at, member_id, member_name")
         .eq("user_id", user.id)
         .order("report_date", { ascending: false })
         .limit(50);
