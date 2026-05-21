@@ -160,25 +160,20 @@ export default function ReportsPage() {
   const handleFile = useCallback(async (file: File) => {
     if (!selected) return;
     const tempId = `up-${Date.now()}`;
-     // Phase 1: processing
-    setUploading(prev => [{ id: tempId, file_name: file.name, status: 'processing' }, ...prev])
-    await new Promise(r => setTimeout(r, 2000))
-
-    const result = await uploadReport(file, selected?.isSelf ? undefined : selected?.id)
-    setUploading(prev => prev.map(r => r.id === tempId ? { ...r, status: 'uploading' } : r))
-    // setUploading(prev => [{ id: tempId, file_name: file.name, status: "uploading" }, ...prev]);
+    setUploading(prev => [{ id: tempId, file_name: file.name, status: 'processing' }, ...prev]);
+    await new Promise(r => setTimeout(r, 2000));
+    setUploading(prev => prev.map(r => r.id === tempId ? { ...r, status: 'uploading' } : r));
     try {
-      const result = await uploadReport(file);
+      const result = await uploadReport(file, selected?.isSelf ? undefined : selected?.id);
       setUploading(prev => prev.filter(r => r.id !== tempId));
       if (result.success) {
-        // Refresh reports from DB
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data } = await supabase.from("lab_reports")
-          .select("id, file_name, lab_name, report_date, structured_data, uploaded_at, member_id")
+          .select("id, file_name, lab_name, report_date, structured_data, uploaded_at, member_id, member_name")
           .eq("user_id", user.id).order("report_date", { ascending: false }).limit(50);
         setReports(data ?? []);
-        refreshCount()
+        refreshCount();
       } else {
         setUploading(prev => prev.map(r => r.id === tempId ? { ...r, status: "error", error: result.error } : r));
       }

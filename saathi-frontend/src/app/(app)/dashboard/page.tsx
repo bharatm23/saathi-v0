@@ -6,6 +6,7 @@ import { Period, HealthMetric } from '@/lib/providers/types'
 import { buildDashboardConfig, buildInsightsSummary, DashboardConfig } from '@/lib/layout'
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { useMember } from '@/lib/member-context'
 
 const DATA_ENDPOINTS = ['steps','calories','distance','activeMinutes','heartrate','sleep','weight','activityLog']
 
@@ -1314,8 +1315,6 @@ type Member = { id: string; name: string; relation: string; isSelf?: boolean };
 function DashboardInner() {
   const params = useSearchParams()
   const provider = params.get('connected') ?? 'fitbit'
-  const [members,   setMembers]   = useState<Member[]>([])
-  const [forMember, setForMember] = useState<Member | null>(null)
   const supabase = createClient()
   const [period, setPeriod] = useState<Period>('day')
   const [metrics, setMetrics] = useState<HealthMetric[]>([])
@@ -1331,23 +1330,43 @@ function DashboardInner() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [tones, setTones] = useState<Tone[]>(['companion' as Tone, 'analyst' as Tone])
   const [prevMetricsMap, setPrevMetricsMap] = useState<Record<string, DataPoint[]>>({})
+  const { selected: forMember } = useMember()
+  const isSelf = !forMember || forMember.isSelf === true
   
+  if (!isSelf) return (
+    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: tokens.bg }}>
+      <div className="text-center space-y-3">
+        <p className="text-sm" style={{ color: tokens.textSecondary }}>
+          {forMember?.name} hasn&apos;t connected a wearable device yet.
+        </p>
+        <a
+          href="/connect"
+          className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
+          style={{ background: tokens.textPrimary }}
+        >
+          Connect their device
+        </a>
+      </div>
+    </div>
+  )
+
   const memberParam = forMember && !forMember.isSelf ? `&memberId=${forMember.id}` : ''
 
-  useEffect(() => {
-    async function loadMembers() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const name = user.user_metadata?.full_name?.split(' ')[0] ?? 'You'
-      const self: Member = { id: user.id, name, relation: 'Self', isSelf: true }
-      const { data: fam } = await supabase.from('family_members').select('*').eq('owner_id', user.id)
-      setMembers([self, ...(fam ?? []).map(m => ({ id: m.id, name: m.name, relation: m.relation }))])
-      setForMember(self)
-    }
-    loadMembers()
-  }, [])
+  // useEffect(() => {
+  //   async function loadMembers() {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (!user) return
+  //     const name = user.user_metadata?.full_name?.split(' ')[0] ?? 'You'
+  //     const self: Member = { id: user.id, name, relation: 'Self', isSelf: true }
+  //     const { data: fam } = await supabase.from('family_members').select('*').eq('owner_id', user.id)
+  //     setMembers([self, ...(fam ?? []).map(m => ({ id: m.id, name: m.name, relation: m.relation }))])
+  //     setForMember(self)
+  //   }
+  //   loadMembers()
+  // }, [])
 
   useEffect(() => {
+    if (!isSelf) return
     fetch('/api/data/' + provider + '?endpoint=sync')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
@@ -1356,7 +1375,7 @@ function DashboardInner() {
         if (v === 'never') { setNever(true); return }
         setSyncDate(extractSyncDate(v))
       }).catch(() => {})
-  }, [provider])
+  }, [provider, isSelf])
 
   const fetchComp = useCallback(async (p: Period, sd: string) => {
     if (p === 'day') return {}
@@ -1422,20 +1441,19 @@ function DashboardInner() {
     fetchInsights(all.filter(m => m.key !== 'activityLog'), pm ?? {}, p)
   }, [provider, fetchComp, fetchInsights])
 
-  // useEffect(() => { if (syncDate) fetchData(period, syncDate) }, [period, syncDate, fetchData])
-  const isSelf = !forMember || forMember.isSelf
-  if (!isSelf) return
-    useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
-  
-  if (!isSelf) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <p className="text-sm text-gray-500">{forMember?.name} hasn&apos;t connected a wearable yet.</p>
-      <a href="/connect" className="text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
-        style={{ background: '#0F2D52' }}>
-        Connect their device
-      </a>
-    </div>
-  )
+  // // useEffect(() => { if (syncDate) fetchData(period, syncDate) }, [period, syncDate, fetchData])
+  // if (!isSelf) return
+  //   useEffect(() => { if (syncDate && forMember !== undefined) fetchData(period, syncDate) }, [period, syncDate, forMember, fetchData])
+
+  // useEffect(() => {
+  //   if (syncDate && forMember !== undefined) {
+  //     fetchData(period, syncDate)
+  //   }
+  // }, [period, syncDate, forMember, fetchData])
+
+  useEffect(() => { 
+    if (syncDate && isSelf) fetchData(period, syncDate) 
+  }, [period, syncDate, fetchData, isSelf])
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'

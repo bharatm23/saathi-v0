@@ -48,6 +48,24 @@ async def ingest_from_storage(
 ):
     uid = get_user_id(credentials) if credentials else (payload.user_id or "a6c75706-96a9-4465-aea2-7807f8df17d8")
 
+    member_name = None
+    if payload.member_id:
+        try:
+            db = get_client()
+
+            member_res = (
+                db.table("members")
+                .select("name")
+                .eq("id", payload.member_id)
+                .eq("user_id", uid)
+                .single()
+                .execute()
+            )
+            member_name = member_res.data.get("name") if member_res.data else None
+
+        except Exception as e:
+            print(f"Could not fetch member name: {e}")
+
     # Get a signed URL from Supabase Storage
     try:
         client = create_client(settings.supabase_url, settings.supabase_service_key)
@@ -71,12 +89,20 @@ async def ingest_from_storage(
 
     # Run extraction
     try:
+        # result = await ingest_lab_report(
+        #     user_id=uid,
+        #     file_bytes=file_bytes,
+        #     file_name=payload.file_name,
+        #     source="upload",
+        #     member_id=payload.member_id,
+        # )
         result = await ingest_lab_report(
             user_id=uid,
             file_bytes=file_bytes,
             file_name=payload.file_name,
             source="upload",
             member_id=payload.member_id,
+            member_name=member_name,
         )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))

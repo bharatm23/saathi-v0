@@ -27,6 +27,7 @@ type MemberContextType = {
   connectedDevices: string[]
   loading: boolean
   refreshCount: () => Promise<void>
+  refreshMembers: () => Promise<void>
 }
 
 // const MemberContext = createContext<MemberContextType>({
@@ -42,6 +43,7 @@ const MemberContext = createContext<MemberContextType>({
   connectedDevices: [],
   loading: true,
   refreshCount: async () => {},
+  refreshMembers: async () => {},
 })
 
 export function MemberProvider({ children }: { children: ReactNode }) {
@@ -64,6 +66,18 @@ export function MemberProvider({ children }: { children: ReactNode }) {
     const { count } = await q
     setReportCount(count ?? 0)
   }, [selected])
+
+  const refreshMembers = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: fam } = await supabase
+      .from('family_members').select('id,name,relation').eq('owner_id', user.id).order('created_at')
+    const rawName = user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'You'
+    const parts = rawName.trim().split(' ')
+    const display = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}` : parts[0]
+    const self: Member = { id: user.id, name: display, relation: 'Self', isSelf: true }
+    setMembers([self, ...(fam ?? []).map(m => ({ id: m.id, name: m.name, relation: m.relation }))])
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -137,6 +151,7 @@ export function MemberProvider({ children }: { children: ReactNode }) {
         connectedDevices,
         loading,
         refreshCount,
+        refreshMembers,
       }}
     >
       {children}

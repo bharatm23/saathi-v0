@@ -509,6 +509,7 @@ async def ingest_lab_report(
     file_name: str,
     source: str = "upload",
     member_id: str | None = None,
+    member_name: str | None = None,
 ) -> dict:
     parser    = get_parser()
     documents = await parser.aload_data(file_bytes, extra_info={"file_name": file_name})
@@ -542,6 +543,7 @@ async def ingest_lab_report(
         file_name=file_name,
         source=source,
         member_id=member_id,
+        member_name=member_name,
     )
 
     # Fetch user's profile name for comparison

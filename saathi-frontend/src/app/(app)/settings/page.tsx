@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { signOut } from '@/lib/api'
 import { User, Users, Smartphone, Bell, Shield, Download, Pencil, Trash2, Plus, LogOut } from 'lucide-react'
+import { useMember } from "@/lib/member-context";
 
 const SECTIONS = [
   { id: 'profile',   label: 'Profile',          icon: User },
@@ -55,12 +56,14 @@ export default function SettingsPage() {
     await supabase.from('profiles').upsert({ id: user.id, full_name: profile.full_name, date_of_birth: profile.date_of_birth || null, gender: profile.gender || null, updated_at: new Date().toISOString() })
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
-
+  
+  const { refreshMembers } = useMember()
   async function addMember() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user || !newMember.name.trim()) return
     const { data } = await supabase.from('family_members').insert({ owner_id: user.id, name: newMember.name.trim(), relation: newMember.relation, date_of_birth: newMember.date_of_birth || null }).select().single()
     if (data) { setMembers(prev => [...prev, data]); setAddOpen(false); setNewMember({ name: '', relation: 'Parent', phone: '', email: '', date_of_birth: '' }) }
+    await refreshMembers()
   }
 
   async function deleteMember(id: string) {
