@@ -49,7 +49,7 @@ Structure your response exactly as:
 [List metrics that have been consistent, with values]
 
 ## Wearable Trends (Last 30 Days)
-[Summarise sleep, steps, HR trends — factual, no interpretation]
+[Summarise sleep, steps, HR trends — factual, ignore null or 0 values, no interpretation]
 
 ## Questions to Ask the Doctor
 [3-5 specific questions based purely on what the data shows — not medical advice]
@@ -60,6 +60,7 @@ Rules:
 - Do not suggest diagnoses or treatments.
 - Every metric mentioned must cite its source report and date.
 - If data is insufficient for a section, say "Insufficient data available."
+- Ignore any wearable metric with a value of 0 or null — these indicate missing data, not real readings. Do not mention or ask questions about zero-value metrics.
 
 Health data:
 {context}"""
