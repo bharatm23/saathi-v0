@@ -144,7 +144,8 @@ export async function GET(
             metrics: transformed,
             member_id: memberId
           }),
-        }).catch(() => {})
+        }).then(r => r.json()).then(d => console.log('🟣 Summary sync:', d))
+        .catch(e => console.log('🔴 Summary sync failed:', e.message))
       }
     }
   
