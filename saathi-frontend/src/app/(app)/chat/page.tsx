@@ -46,7 +46,7 @@ export default function ChatPage() {
       const { count: wc } = await supabase
         .from("wearable_snapshots").select("*", { count: "exact", head: true }).eq("user_id", user.id);
 
-      setMeta(`${name} · ${rc ?? 0} report${rc !== 1 ? "s" : ""} · ${wc ?? 0}d wearable`);
+      setMeta(`${name} · ${rc ?? 0} report${rc !== 1 ? "s" : ""} · ${wc ?? 0}d wearable data`);
     }
     load();
   }, []);
@@ -101,10 +101,9 @@ export default function ChatPage() {
   return (
     <PageShell title="Chat" meta={meta}>
       {/* Member switcher */}
-      {members.length > 1 && (
+      {/* {members.length > 1 && (
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           <span className="text-[12px] text-gray-400 uppercase tracking-wide font-medium mr-1">FOR</span>
-          {/* All option */}
           <button
             onClick={() => setForMember(null)}
             className={cn(
@@ -134,10 +133,10 @@ export default function ChatPage() {
             </button>
           ))}
         </div>
-      )}
+      )} */}
 
       {/* Context pill */}
-      {forMember && (
+      {/* {forMember && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-[12px] text-gray-500">Chatting about</span>
           <span className="text-[12px] font-medium px-2.5 py-1 rounded-full"
@@ -148,7 +147,7 @@ export default function ChatPage() {
             Switch
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Messages */}
       <div className="space-y-4 pb-6">

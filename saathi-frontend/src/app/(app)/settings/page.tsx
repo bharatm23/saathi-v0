@@ -69,6 +69,8 @@ export default function SettingsPage() {
     if (!user || !newMember.name.trim()) return
     const { data } = await supabase.from('family_members').insert({ owner_id: user.id, name: newMember.name.trim(), relation: newMember.relation, date_of_birth: newMember.date_of_birth || null }).select().single()
     if (data) { setMembers(prev => [...prev, data]); setAddOpen(false); setNewMember({ name: '', relation: 'Parent', phone: '', email: '', date_of_birth: '' }) }
+    const { data: fresh } = await supabase.from('family_members').select('*').eq('owner_id', user.id).order('created_at')
+    if (fresh) setMembers(fresh)
     await refreshMembers()
   }
 
