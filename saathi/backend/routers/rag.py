@@ -178,15 +178,35 @@ def build_context(lab_docs: list[dict], wearable_docs: list[dict]) -> str:
     if wearable_docs:
         parts.append("\n=== Wearable Data ===")
         for row in wearable_docs:
-            steps    = row.get("steps", "N/A")
-            sleep    = row.get("sleep_hours", "N/A")
-            hr       = row.get("resting_hr", "N/A")
-            active   = row.get("active_minutes", "N/A")
-            calories = row.get("calories", "N/A")
-            parts.append(
-                f"  [{row.get('date')}] Steps:{steps} | Sleep:{sleep}h | "
-                f"HR:{hr}bpm | Active:{active}min | Calories:{calories}"
-            )
+            source = row.get("source", "fitbit")
+            
+            # Period summary rows (fitbit_30d, fitbit_1y)
+            if source in ("fitbit_30d", "fitbit_1y"):
+                raw = row.get("raw_data") or {}
+                period_label = "30-day" if source == "fitbit_30d" else "1-year"
+                metrics_list = raw.get("metrics", [])
+                endpoint = raw.get("endpoint", "")
+                sync_date = row.get("date")
+                parts.append(f"\n  [{period_label} summary as of {sync_date} — {endpoint}]")
+                for m in metrics_list:
+                    key = m.get("key", "")
+                    avg = m.get("avg", "—")
+                    min_v = m.get("min", "—")
+                    max_v = m.get("max", "—")
+                    unit = m.get("unit", "")
+                    if avg not in ("—", "", None):
+                        parts.append(f"    {key}: avg={avg}{unit} min={min_v}{unit} max={max_v}{unit}")
+            else:
+                # Daily snapshot
+                steps    = row.get("steps", "N/A")
+                sleep    = row.get("sleep_hours", "N/A")
+                hr       = row.get("resting_hr", "N/A")
+                active   = row.get("active_minutes", "N/A")
+                calories = row.get("calories", "N/A")
+                parts.append(
+                    f"  [{row.get('date')}] Steps:{steps} | Sleep:{sleep}h | "
+                    f"HR:{hr}bpm | Active:{active}min | Calories:{calories}"
+                )
 
     return "\n".join(parts) if parts else "No health records found for this user."
 
