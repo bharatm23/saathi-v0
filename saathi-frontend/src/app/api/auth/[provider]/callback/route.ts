@@ -47,17 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   if (!res.ok) return NextResponse.redirect(base + '/connect?error=token_failed')
 
   const tokens = await res.json()
-  session.tokens = {
-    ...session.tokens,
-    [id]: {
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      expiresAt: Date.now() + tokens.expires_in * 1000,
-    },
-  }
-  session.oauth = undefined
-  await session.save()
-
+  
   // Fetch Fitbit profile to verify email match
   const profileRes = await fetch('https://api.fitbit.com/1/user/-/profile.json', {
     headers: { Authorization: `Bearer ${tokens.access_token}` }
@@ -70,11 +60,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   const { data: { user } } = await supabase.auth.getUser()
 
   // If no Supabase session, don't store tokens
+  // if (!user) {
+  //   return NextResponse.redirect(`${origin}/dashboard?error=not_logged_in`)
+  // }
+
   if (!user) {
-    return NextResponse.redirect(`${origin}/dashboard?error=not_logged_in`)
+    return NextResponse.redirect(`${base}/dashboard?error=not_logged_in`)
   }
   // Store userId alongside tokens so we can validate later
-  session.tokens = { ...session.tokens, fitbit: { ...tokens, supabaseUserId: user.id } }
+  session.oauth = undefined
+  session.tokens = {
+    ...session.tokens,
+    [id]: {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresAt: Date.now() + tokens.expires_in * 1000,
+      supabaseUserId: user.id,
+    },
+  }
   await session.save()
 
   // Connection storage handled by iron-session (token saved in session.save() above)
