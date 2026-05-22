@@ -1334,7 +1334,6 @@ function DashboardInner() {
   const isSelf = !forMember || forMember.isSelf === true
 
   const memberParam = forMember && !forMember.isSelf ? `&memberId=${forMember.id}` : ''
-  const connectedParam = params.get('connected')
 
   // useEffect(() => {
   //   async function loadMembers() {
@@ -1352,19 +1351,14 @@ function DashboardInner() {
   useEffect(() => {
     if (!isSelf) return
     fetch('/api/data/' + provider + '?endpoint=sync')
-      .then(r => {
-        if (r.status === 401) { setNever(true); return null }
-        return r.ok ? r.json() : null
-      })
+      .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (!d) return  // ← add this guard
         const v = d?.metrics?.[0]?.value ?? 'never'
         setSyncRaw(v)
         if (v === 'never') { setNever(true); return }
-        setNever(false)
         setSyncDate(extractSyncDate(v))
-      }).catch(() => { setNever(true) })
-  }, [provider, isSelf, connectedParam])
+      }).catch(() => {})
+  }, [provider, isSelf])
 
   const fetchComp = useCallback(async (p: Period, sd: string) => {
     if (p === 'day') return {}
@@ -1446,10 +1440,6 @@ function DashboardInner() {
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'
-  
-  const { refreshDevices } = useMember()
-  const { connectedDevices } = useMember()
-  const fitbitConnected = connectedDevices.includes('Fitbit')
 
   if (!isSelf) return (
     <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: tokens.bg }}>
@@ -1504,17 +1494,14 @@ function DashboardInner() {
               style={{ backgroundColor: tokens.bgDark, color: tokens.textDark, borderRadius: tokens.radiusMd }}>
               + Device
             </a>
-            {fitbitConnected && (
-              <button onClick={async () => {
+              {/* <button onClick={async () => {
                 await fetch('/api/auth/fitbit/logout', { method: 'POST' })
-                refreshDevices()
                 window.location.reload()
                 }}
                 className="text-xs font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#fff', color: '#000', borderRadius: tokens.radiusMd }}>
-                Sign out Fitbit
-              </button>
-            )}
+                style={{ backgroundColor: '#2D1A14', color: '#D4CFC8', borderRadius: tokens.radiusMd }}>
+                Sign out of Fitbit
+              </button> */}
           </div>
         </div>
 
@@ -1558,11 +1545,11 @@ function DashboardInner() {
         {never && (
           <div className="rounded-2xl p-16 text-center" style={{ ...cardStyle, borderRadius: tokens.radiusXl }}>
             <p className="text-sm mb-4" style={{ color: tokens.textSecondary }}>Your device has never synced.</p>
-            <button onClick={() => { window.location.href = '/api/auth/' + provider }}
+            <a href={'/api/auth/' + provider}
               className="inline-block text-sm font-semibold px-6 py-3 rounded-xl"
               style={{ backgroundColor: tokens.textPrimary, color: tokens.textDark }}>
-              Reconnect Fitbit
-            </button>
+              Reconnect
+            </a>
           </div>
         )}
 
