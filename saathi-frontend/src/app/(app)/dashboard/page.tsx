@@ -1314,6 +1314,7 @@ type Member = { id: string; name: string; relation: string; isSelf?: boolean };
 // ─── Main ─────────────────────────────────────────────────────
 function DashboardInner() {
   const params = useSearchParams()
+  const connectedParam = params.get('connected')
   const provider = params.get('connected') ?? 'fitbit'
   const supabase = createClient()
   const [period, setPeriod] = useState<Period>('day')
@@ -1353,12 +1354,13 @@ function DashboardInner() {
     fetch('/api/data/' + provider + '?endpoint=sync')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
+        if (!d) return
         const v = d?.metrics?.[0]?.value ?? 'never'
         setSyncRaw(v)
         if (v === 'never') { setNever(true); return }
         setSyncDate(extractSyncDate(v))
       }).catch(() => {})
-  }, [provider, isSelf])
+  }, [provider, isSelf, connectedParam])
 
   const fetchComp = useCallback(async (p: Period, sd: string) => {
     if (p === 'day') return {}
