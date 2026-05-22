@@ -1351,13 +1351,16 @@ function DashboardInner() {
   useEffect(() => {
     if (!isSelf) return
     fetch('/api/data/' + provider + '?endpoint=sync')
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (r.status === 401) { setNever(true); return null }
+        return r.ok ? r.json() : null
+      })
       .then(d => {
         const v = d?.metrics?.[0]?.value ?? 'never'
         setSyncRaw(v)
         if (v === 'never') { setNever(true); return }
         setSyncDate(extractSyncDate(v))
-      }).catch(() => {})
+      }).catch(() => { setNever(true) })
   }, [provider, isSelf])
 
   const fetchComp = useCallback(async (p: Period, sd: string) => {
@@ -1440,6 +1443,8 @@ function DashboardInner() {
 
   const displayMetrics = metrics.filter(m => m.key !== 'activityLog')
   const isYearly = period === '1y'
+  
+  const { refreshDevices } = useMember()
 
   if (!isSelf) return (
     <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: tokens.bg }}>
@@ -1496,10 +1501,11 @@ function DashboardInner() {
             </a>
               <button onClick={async () => {
                 await fetch('/api/auth/fitbit/logout', { method: 'POST' })
+                refreshDevices()
                 window.location.reload()
                 }}
                 className="text-xs font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#2D1A14', color: '#D4CFC8', borderRadius: tokens.radiusMd }}>
+                style={{ backgroundColor: '#fff', color: '#000', borderRadius: tokens.radiusMd }}>
                 Sign out of Fitbit
               </button>
           </div>

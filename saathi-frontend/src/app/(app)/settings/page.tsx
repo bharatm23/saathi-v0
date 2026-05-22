@@ -63,6 +63,8 @@ export default function SettingsPage() {
   
   const { refreshMembers } = useMember()
   async function addMember() {
+    const cleanName = newMember.name.trim()
+    if (!cleanName || cleanName.length < 2) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user || !newMember.name.trim()) return
     const { data } = await supabase.from('family_members').insert({ owner_id: user.id, name: newMember.name.trim(), relation: newMember.relation, date_of_birth: newMember.date_of_birth || null }).select().single()

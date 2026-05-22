@@ -28,6 +28,7 @@ type MemberContextType = {
   loading: boolean
   refreshCount: () => Promise<void>
   refreshMembers: () => Promise<void>
+  refreshDevices: () => Promise<void>
 }
 
 // const MemberContext = createContext<MemberContextType>({
@@ -44,6 +45,7 @@ const MemberContext = createContext<MemberContextType>({
   loading: true,
   refreshCount: async () => {},
   refreshMembers: async () => {},
+  refreshDevices: async () => {},
 })
 
 export function MemberProvider({ children }: { children: ReactNode }) {
@@ -77,6 +79,22 @@ export function MemberProvider({ children }: { children: ReactNode }) {
     const display = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}` : parts[0]
     const self: Member = { id: user.id, name: display, relation: 'Self', isSelf: true }
     setMembers([self, ...(fam ?? []).map(m => ({ id: m.id, name: m.name, relation: m.relation }))])
+  }, [])
+
+  const refreshDevices = useCallback(async () => {
+    try {
+      const res = await fetch('/api/devices/status')
+      if (res.ok) {
+        const data = await res.json()
+        const devices: string[] = []
+        if (data.fitbit?.connected) devices.push('Fitbit')
+        setConnectedDevices(devices)
+      } else {
+        setConnectedDevices([])
+      }
+    } catch {
+      setConnectedDevices([])
+    }
   }, [])
 
   useEffect(() => {
@@ -152,6 +170,7 @@ export function MemberProvider({ children }: { children: ReactNode }) {
         loading,
         refreshCount,
         refreshMembers,
+        refreshDevices,
       }}
     >
       {children}
