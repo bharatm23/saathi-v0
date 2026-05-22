@@ -1564,12 +1564,12 @@ function DashboardInner() {
           <>
             <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones} dataLoading={loading}/>
             <SnapshotBar metrics={displayMetrics} period={period}/>
-            <ConsistencyMatrix metrics={displayMetrics} isYearly={false}/>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <EfficiencyScore metrics={displayMetrics}/>
               <PeakPerformanceDays metrics={displayMetrics}/>
               <VolumeTrend metrics={displayMetrics} isYearly={false}/>
             </div>
+            <ConsistencyMatrix metrics={displayMetrics} isYearly={false}/>
           </>
         )}
 
@@ -1578,7 +1578,7 @@ function DashboardInner() {
           <>
             <StoryCard period={period} metrics={displayMetrics} previousMetrics={prevMetricsMap} tones={tones} onTonesChange={setTones} dataLoading={loading}/>
             <SnapshotBar metrics={displayMetrics} period={period}/>
-            <AnnualBar metrics={displayMetrics}/>
+            {/* <AnnualBar metrics={displayMetrics}/> */}
             <ConsistencyMatrix metrics={displayMetrics} isYearly={true}/>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <EfficiencyScore metrics={displayMetrics}/>
