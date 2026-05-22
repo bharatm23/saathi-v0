@@ -1357,6 +1357,7 @@ function DashboardInner() {
         return r.ok ? r.json() : null
       })
       .then(d => {
+        if (!d) return  // ← add this guard
         const v = d?.metrics?.[0]?.value ?? 'never'
         setSyncRaw(v)
         if (v === 'never') { setNever(true); return }
@@ -1557,11 +1558,11 @@ function DashboardInner() {
         {never && (
           <div className="rounded-2xl p-16 text-center" style={{ ...cardStyle, borderRadius: tokens.radiusXl }}>
             <p className="text-sm mb-4" style={{ color: tokens.textSecondary }}>Your device has never synced.</p>
-            <a href={'/api/auth/' + provider}
+            <button onClick={() => { window.location.href = '/api/auth/' + provider }}
               className="inline-block text-sm font-semibold px-6 py-3 rounded-xl"
               style={{ backgroundColor: tokens.textPrimary, color: tokens.textDark }}>
               Reconnect Fitbit
-            </a>
+            </button>
           </div>
         )}
 
