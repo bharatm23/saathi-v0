@@ -212,25 +212,38 @@ class WearableSummaryPayload(BaseModel):
 @router.post("/wearable/summary")
 async def ingest_wearable_summary(payload: WearableSummaryPayload):
     try:
-        from services.wearable_sync import embed_text, build_embedding_text
+        from services.wearable_sync import embed_text
         from db.client import get_client
-        from datetime import date as date_type
 
-        summary_text = f"Fitbit {payload.period} summary for {payload.sync_date}. "
-        summary_text += " ".join(
-            f"{m.get('key','')}: {m.get('avg') or m.get('value','')} {m.get('unit','')}"
-            for m in payload.metrics if m.get('value') not in ('—', '', None)
-        )
+        # Build rich summary text from avg values
+        summary_parts = [f"Fitbit {payload.period} summary as of {payload.sync_date}. Endpoint: {payload.endpoint_key}."]
+        for m in payload.metrics:
+            avg = m.get('avg')
+            if avg and avg not in ('—', '', None):
+                summary_parts.append(
+                    f"{m.get('key','')}: avg={avg} min={m.get('min','—')} max={m.get('max','—')} {m.get('unit','')}"
+                )
+        summary_text = " ".join(summary_parts)
+
+        if len(summary_text.strip()) < 20:
+            return {"stored": False, "reason": "no usable metrics in summary"}
+
         embedding = await embed_text(summary_text)
         db = get_client()
         db.table("wearable_snapshots").upsert({
             "user_id": payload.user_id,
-            "date": payload.sync_date,
+            "date": payload.sync_date[:10],
             "source": f"fitbit_{payload.period}",
-            "member_id": payload.member_id if hasattr(payload, 'member_id') else None,
-            "raw_data": {...},
+            "member_id": payload.member_id,
+            "raw_data": {
+                "period": payload.period,
+                "endpoint": payload.endpoint_key,
+                "metrics": payload.metrics,
+            },
             "embedding": embedding,
         }, on_conflict="user_id,date,source,member_id").execute()
-        return {"stored": True}
+
+        return {"stored": True, "endpoint": payload.endpoint_key, "period": payload.period}
     except Exception as e:
+        print(f"🔴 wearable summary error: {e}")
         return {"stored": False, "error": str(e)}
