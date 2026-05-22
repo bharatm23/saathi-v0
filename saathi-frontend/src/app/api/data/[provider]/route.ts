@@ -142,10 +142,10 @@ export async function GET(
             sync_date: anchorDate,
             endpoint_key: endpointKey,
             metrics: transformed,
-            member_id: memberId
+            data_points: transformed.flatMap((m: any) => m.dataPoints ?? []),  // ← add this
+            member_id: memberId,
           }),
-        }).then(r => r.json()).then(d => console.log('🟣 Summary sync:', d))
-        .catch(e => console.log('🔴 Summary sync failed:', e.message))
+        })
       }
     }
   

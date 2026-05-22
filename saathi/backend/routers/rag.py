@@ -70,7 +70,9 @@ YOUR ONLY JOB: Help the user understand their OWN health data.
 ABSOLUTE RULES — no exceptions:
 1. Answer ONLY using the retrieved documents provided below.
 2. If the answer is not in the documents, say exactly:
-   "I don't have that information in your records."
+   "Detailed day-level history for that isn't available yet — 
+   this feature is coming soon. I can tell you about overall 
+   trends from your summaries."
    Do not guess, infer, or use general medical knowledge.
 3. NEVER diagnose, interpret medical meaning, or recommend treatment.
    If asked, say: "Saathi shows your data. Please discuss what it means with your doctor."
@@ -196,6 +198,13 @@ def build_context(lab_docs: list[dict], wearable_docs: list[dict]) -> str:
                     unit = m.get("unit", "")
                     if avg not in ("—", "", None):
                         parts.append(f"    {key}: avg={avg}{unit} min={min_v}{unit} max={max_v}{unit}")
+                
+                data_points = raw.get("data_points", [])
+                if data_points:
+                    parts.append(f"    Daily breakdown ({len(data_points)} days):")
+                    for dp in data_points:
+                        if dp.get("value") not in ("—", "", None, 0):
+                            parts.append(f"      {dp.get('date','?')}: {dp.get('value')} {dp.get('unit','')}")
             else:
                 # Daily snapshot
                 steps    = row.get("steps", "N/A")

@@ -207,6 +207,7 @@ class WearableSummaryPayload(BaseModel):
     sync_date: str
     endpoint_key: str
     metrics: list[dict]
+    data_points: list[dict] = []
     member_id: str | None = None
 
 @router.post("/wearable/summary")
@@ -239,6 +240,7 @@ async def ingest_wearable_summary(payload: WearableSummaryPayload):
                 "period": payload.period,
                 "endpoint": payload.endpoint_key,
                 "metrics": payload.metrics,
+                "data_points": payload.data_points,
             },
             "embedding": embedding,
         }, on_conflict="user_id,date,source,member_id").execute()
