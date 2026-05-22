@@ -874,7 +874,7 @@ function ConsistencyMatrix({ metrics, isYearly }: {
                     className="rounded-lg aspect-square"
                     style={{
                       backgroundColor: cell ? getColor(cell.value) : 'transparent',
-                      minHeight: 28,
+                      minHeight: 13,
                     }}
                     title={cell ? cell.date + ': ' + fmtVal(cell.value) : ''}
                   />
