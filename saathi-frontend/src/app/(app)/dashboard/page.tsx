@@ -1459,13 +1459,14 @@ function DashboardInner() {
   )
 
   return (
-  <div className="min-h-screen" style={{ backgroundColor: tokens.bg }}>
-    <main className="px-6 py-5">
+    <div className="min-h-screen bg-gray-50">
+      <main className="px-6 py-5">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="font-serif text-2xl font-bold" style={{ color: tokens.textPrimary }}>Dashboard</h1>
+            {/* <h1 className="font-serif text-2xl font-bold" style={{ color: tokens.textPrimary }}>Dashboard</h1> */}
+            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
             {syncRaw && !never && (
               <p className="text-xs mt-0.5" style={{ color: tokens.textLabel }}>
                 Last sync: {formatSyncTime(syncRaw)}
@@ -1493,6 +1494,14 @@ function DashboardInner() {
               style={{ backgroundColor: tokens.bgDark, color: tokens.textDark, borderRadius: tokens.radiusMd }}>
               + Device
             </a>
+              <button onClick={async () => {
+                await fetch('/api/auth/fitbit/logout', { method: 'POST' })
+                window.location.reload()
+                }}
+                className="text-xs font-semibold px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#2D1A14', color: '#D4CFC8', borderRadius: tokens.radiusMd }}>
+                Sign out of Fitbit
+              </button>
           </div>
         </div>
 

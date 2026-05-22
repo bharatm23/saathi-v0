@@ -72,7 +72,7 @@ function MemberDropdown() {
           ))}
           <div className="border-t border-gray-100 mt-1 pt-1">
             <button
-              onClick={() => { router.push('/settings?tab=family'); setOpen(false) }}
+              onClick={() => { router.push('/settings#family'); setOpen(false) }}
               className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-[13px] text-blue-600 font-medium transition-colors">
               <Plus size={13} /> Add member
             </button>

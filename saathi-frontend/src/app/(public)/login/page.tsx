@@ -99,7 +99,7 @@ export default function LoginPage() {
           <button type="submit" disabled={loading}
             className="w-full py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
             style={{ background: '#0F2D52' }}>
-            {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            {loading ? 'Coming Soon' : mode === 'signin' ? 'Coming Soon' : 'Coming Soon'}
           </button>
         </form>
 

@@ -49,6 +49,10 @@ export default function SettingsPage() {
     load()
   }, [])
 
+  useEffect(() => {
+    if (window.location.hash === '#family') setActive('family')
+  }, [])
+
   async function saveProfile() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()

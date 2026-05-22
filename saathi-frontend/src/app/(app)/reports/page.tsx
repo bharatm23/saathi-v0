@@ -208,7 +208,7 @@ export default function ReportsPage() {
       <Card className="p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[13px] text-gray-500">Whose report is this?</p>
-          <a href="/settings" className="text-[13px] font-medium text-navy flex items-center gap-1 hover:opacity-80">
+          <a href="/settings#family" className="text-[13px] font-medium text-navy flex items-center gap-1 hover:opacity-80">
             <Plus size={14} /> New family member
           </a>
         </div>
