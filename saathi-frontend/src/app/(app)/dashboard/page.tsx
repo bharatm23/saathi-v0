@@ -1461,13 +1461,13 @@ function DashboardInner() {
   )
 
   return (
-  <div className="min-h-screen" style={{ backgroundColor: tokens.bg }}>
+  <div className="min-h-screen bg-gray-50">
     <main className="px-6 py-5">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="font-serif text-2xl font-bold" style={{ color: tokens.textPrimary }}>Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
             {syncRaw && !never && (
               <p className="text-xs mt-0.5" style={{ color: tokens.textLabel }}>
                 Last sync: {formatSyncTime(syncRaw)}
