@@ -207,6 +207,7 @@ class WearableSummaryPayload(BaseModel):
     sync_date: str
     endpoint_key: str
     metrics: list[dict]
+    member_id: str | None = None
 
 @router.post("/wearable/summary")
 async def ingest_wearable_summary(payload: WearableSummaryPayload):
@@ -226,9 +227,10 @@ async def ingest_wearable_summary(payload: WearableSummaryPayload):
             "user_id": payload.user_id,
             "date": payload.sync_date,
             "source": f"fitbit_{payload.period}",
-            "raw_data": {"period": payload.period, "endpoint": payload.endpoint_key, "metrics": payload.metrics},
+            "member_id": payload.member_id if hasattr(payload, 'member_id') else None,
+            "raw_data": {...},
             "embedding": embedding,
-        }, on_conflict="user_id,date,source").execute()
+        }, on_conflict="user_id,date,source,member_id").execute()
         return {"stored": True}
     except Exception as e:
         return {"stored": False, "error": str(e)}
