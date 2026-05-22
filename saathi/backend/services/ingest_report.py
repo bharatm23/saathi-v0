@@ -520,7 +520,35 @@ async def ingest_lab_report(
         return {"success": False, "error": "Could not extract text. Upload a clearer image or typed PDF."}
 
     structured = await extract_structured_metrics(raw_text)   # passes 1-3
-    structured = post_process_metrics(structured)              # flag correction
+    # Validate document is actually a medical/lab report
+    validation_prompt = """Is this document a medical lab report, pathology report, blood test, or clinical diagnostic report?
+Answer with ONLY a JSON object: {"is_medical_report": true/false, "reason": "brief reason"}"""
+
+    validation = await openai.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=0,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": validation_prompt},
+            {"role": "user", "content": f"Document text:\n\n{raw_text[:3000]}"},
+        ],
+    )
+
+    val_result = json.loads(validation.choices[0].message.content)
+
+    if not val_result.get("is_medical_report"):
+        return {
+            "success": False,
+            "error": (
+                "This doesn't appear to be a lab or pathology report. "
+                f"{val_result.get('reason', '')} "
+                "Please upload a printed medical test report."
+            ),
+            "not_medical": True,
+        }
+
+    
+    structured = post_process_metrics(structured)             # flag correction
     structured = await normalize_lab_names(structured)        # pass 4
 
     report_date = None
