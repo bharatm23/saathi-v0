@@ -39,4 +39,5 @@ export interface StoredTokens {
   accessToken: string
   refreshToken: string
   expiresAt: number
+  supabaseUserId?: string
 }
