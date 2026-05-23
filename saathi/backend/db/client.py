@@ -66,12 +66,18 @@ async def insert_lab_report(
 
 
 async def get_lab_reports(user_id: str, limit: int = 3, member_id: str | None = None) -> list[dict]:
-    q = db.table("lab_reports").select("...").eq("user_id", user_id)
+    db = get_client()
+    q = (
+        db.table("lab_reports")
+        .select("id, report_date, lab_name, structured_data, raw_text, source, member_id")
+        .eq("user_id", user_id)
+    )
     if member_id:
         q = q.eq("member_id", member_id)
     else:
         q = q.is_("member_id", None)
-    return q.order("report_date", desc=True).limit(limit).execute().data
+    result = q.order("report_date", desc=True).limit(limit).execute()
+    return result.data
 
 
 async def similarity_search_labs(
@@ -128,20 +134,19 @@ async def upsert_wearable_snapshot(
 
 
 async def get_wearable_snapshots(user_id: str, days: int = 30, member_id: str | None = None) -> list[dict]:
-    q = db.table("wearable_snapshots").select("...").eq("user_id", user_id).eq("source", "fitbit")
+    db = get_client()
+    q = (
+        db.table("wearable_snapshots")
+        .select("date, steps, calories, distance_km, active_minutes, resting_hr, sleep_hours, sleep_efficiency, weight_kg, source, raw_data")
+        .eq("user_id", user_id)
+        .eq("source", "fitbit")
+    )
     if member_id:
         q = q.eq("member_id", member_id)
     else:
         q = q.is_("member_id", None)
-    return q.order("date", desc=True).limit(days).execute().data
-
-async def get_lab_reports(user_id: str, limit: int = 3, member_id: str | None = None) -> list[dict]:
-    q = db.table("lab_reports").select("...").eq("user_id", user_id)
-    if member_id:
-        q = q.eq("member_id", member_id)
-    else:
-        q = q.is_("member_id", None)
-    return q.order("report_date", desc=True).limit(limit).execute().data
+    result = q.order("date", desc=True).limit(days).execute()
+    return result.data
 
 
 async def similarity_search_wearable(
