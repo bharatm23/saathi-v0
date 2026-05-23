@@ -26,7 +26,7 @@ export default function DigestPage() {
   async function load(p: Period) {
     setLoading(true); setContent(null); setError("");
     try {
-      const data = await fetchDigest(p);
+      const data = await fetchDigest(p, forMember?.isSelf ? undefined : forMember?.id ?? undefined)
       setContent(data.digest);
     } catch (e: any) {
       setError(e.message ?? "Could not load digest.");

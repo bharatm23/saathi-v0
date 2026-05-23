@@ -19,6 +19,7 @@ MODEL = "gpt-4o-mini"
 class DigestRequest(BaseModel):
     user_id: str = "a6c75706-96a9-4465-aea2-7807f8df17d8"
     period_days: int = 7
+    member_id: str | None = None
 
 
 DIGEST_SYSTEM = """You are Saathi generating a health digest.
@@ -56,8 +57,8 @@ Data:
 @traceable(name="generate-digest")
 @router.post("/generate")
 async def generate_digest(req: DigestRequest):
-    wearable = await get_wearable_snapshots(req.user_id, days=req.period_days)
-    labs = await get_lab_reports(req.user_id, limit=2)
+    wearable = await get_wearable_snapshots(req.user_id, days=req.period_days, member_id=req.member_id)
+    labs = await get_lab_reports(req.user_id, limit=2, member_id=req.member_id)
 
     context_parts = []
 

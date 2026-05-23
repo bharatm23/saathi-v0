@@ -40,11 +40,15 @@ export async function fetchBrief(appointmentType: string) {
   return res.json()
 }
 
-export async function fetchDigest(period: number) {
+export async function fetchDigest(period: number, memberId?: string) {
   const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
   const res = await fetch(`${BASE}/digest/generate`, {
     method: 'POST', headers,
-    body: JSON.stringify({ user_id: userId, period_days: period }),
+    body: JSON.stringify({ 
+      user_id: userId, 
+      member_id: memberId ?? null,
+      period_days: period 
+    }),
   })
   if (!res.ok) throw new Error('Digest failed')
   return res.json()
