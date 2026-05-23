@@ -8,7 +8,7 @@ import { MarkdownWithCallouts } from "@/components/MarkdownWithCallouts";
 import { useMember } from "@/lib/member-context";
 import { fetchDigest } from "@/lib/api";
 
-type Period = 7 | 14 | 30;
+type Period = 7 | 30 | 90
 
 export default function DigestPage() {
   const { selected: forMember, reportCount } = useMember();
@@ -16,6 +16,12 @@ export default function DigestPage() {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState<string | null>(null);
   const [error,   setError]   = useState("");
+
+  const PERIODS = [
+    { value: 7,  label: '7 days',  pro: false },
+    { value: 30, label: '30 days', pro: true  },
+    { value: 90, label: '1 year',  pro: true  },
+  ] as const
 
   async function load(p: Period) {
     setLoading(true); setContent(null); setError("");
@@ -46,13 +52,30 @@ export default function DigestPage() {
     >
       {/* Period selector */}
       <div className="flex gap-2 mb-5">
-        {([7, 14, 30] as Period[]).map(p => (
-          <button key={p} onClick={() => setPeriod(p)}
-            className={cn("text-[13px] px-4 py-2 rounded-full border transition-colors",
-              p === period ? "bg-navy text-white border-navy" : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-            )}>
-            {p} days
-          </button>
+        {PERIODS.map(p => (
+          <div key={p.value} className="relative group">
+            <button
+              onClick={() => !p.pro && setPeriod(p.value as Period)}
+              className={cn(
+                "text-[13px] px-4 py-2 rounded-full border transition-colors",
+                p.pro
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : p.value === period
+                  ? "bg-navy text-white border-navy"
+                  : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+              )}
+            >
+              {p.label}
+              {p.pro && <span className="ml-1.5 text-[10px] font-medium text-gray-400">Pro</span>}
+            </button>
+            {p.pro && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                <div className="bg-gray-900 text-white text-[11px] px-2.5 py-1.5 rounded-lg whitespace-nowrap">
+                  Upgrade to Pro
+                </div>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

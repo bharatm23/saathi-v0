@@ -35,8 +35,11 @@ Using ONLY the data provided, write a brief, readable summary in this exact form
 [bullet: metric that declined or needs attention, with values]
 
 **One Action**
-[Single behavioural suggestion based purely on what the data shows —
- e.g. "You slept under 6 hours on 4 nights" NOT "You should see a doctor about X"]
+[Single behavioural suggestion based purely on what the data shows. 
+ For wearable data: e.g. "You slept under 6 hours on 4 nights."
+ For lab results: suggest a lifestyle adjustment only (e.g. "Your Vitamin D is low - time outdoors 
+ and dietary sources like eggs and fish can help." NOT medical treatment or medication advice.)
+ Never recommend seeing a doctor or prescribe treatment.]
 
 Rules:
 - Data only. No medical interpretation.
