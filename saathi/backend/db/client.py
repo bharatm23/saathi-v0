@@ -132,15 +132,13 @@ async def upsert_wearable_snapshot(
     return result.data[0]
 
 
-async def get_wearable_snapshots(
-    user_id: str, days: int = 30
-) -> list[dict]:
-    """Fetch last N days of wearable data for a user."""
+async def get_wearable_snapshots(user_id: str, days: int = 30) -> list[dict]:
     db = get_client()
     result = (
         db.table("wearable_snapshots")
-        .select("date, steps, calories, distance_km, active_minutes, resting_hr, sleep_hours, sleep_efficiency, weight_kg, source")
+        .select("date, steps, calories, distance_km, active_minutes, resting_hr, sleep_hours, sleep_efficiency, weight_kg, source, raw_data")
         .eq("user_id", user_id)
+        .eq("source", "fitbit")
         .order("date", desc=True)
         .limit(days)
         .execute()
