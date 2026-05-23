@@ -33,7 +33,7 @@ openai = AsyncOpenAI(api_key=settings.openai_api_key)
 class BriefRequest(BaseModel):
     user_id: str = "a6c75706-96a9-4465-aea2-7807f8df17d8"
     appointment_type: str = "general checkup"
-    doctor_name: str | None = None
+    member_id: str | None = None
 
 
 BRIEF_SYSTEM = """You are Saathi, a health data assistant preparing a pre-appointment brief.
@@ -69,8 +69,8 @@ Health data:
 @traceable(name="generate-brief")
 @router.post("/generate")
 async def generate_brief(req: BriefRequest):
-    labs = await get_lab_reports(req.user_id, limit=3)
-    wearable = await get_wearable_snapshots(req.user_id, days=30)
+    labs     = await get_lab_reports(req.user_id, limit=3, member_id=req.member_id)
+    wearable = await get_wearable_snapshots(req.user_id, days=30, member_id=req.member_id)
 
     # Build context
     context_parts = []

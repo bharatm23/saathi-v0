@@ -30,11 +30,15 @@ export async function fetchChat(query: string) {
   return res.json()
 }
 
-export async function fetchBrief(appointmentType: string) {
+export async function fetchBrief(appointmentType: string, memberId?: string) {
   const [userId, headers] = await Promise.all([getUserId(), getAuthHeaders()])
   const res = await fetch(`${BASE}/brief/generate`, {
     method: 'POST', headers,
-    body: JSON.stringify({ user_id: userId, appointment_type: appointmentType }),
+    body: JSON.stringify({ 
+      user_id: userId,
+      member_id: memberId ?? null,
+      appointment_type: appointmentType 
+    }),
   })
   if (!res.ok) throw new Error('Brief failed')
   return res.json()

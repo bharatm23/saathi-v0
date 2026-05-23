@@ -21,7 +21,7 @@ export default function BriefPage() {
     if (!selected) return;
     setLoading(true); setError("");
     try {
-      const data = await fetchBrief(selected);
+      const data = await fetchBrief(selected, forMember?.isSelf ? undefined : forMember?.id)
       setBrief(data.brief);
     } catch (e: any) {
       setError(e.message ?? "Could not generate brief.");
