@@ -87,6 +87,7 @@ async def generate_brief(req: BriefRequest):
         avg_hr    = sum(r.get("resting_hr", 0) or 0 for r in wearable) / len(wearable)
         context_parts.append(f"  Avg steps: {avg_steps:.0f}, Avg sleep: {avg_sleep:.1f}h, Avg resting HR: {avg_hr:.0f} bpm")
 
+    
     context = "\n".join(context_parts) or "No health data available."
 
     response = await openai.chat.completions.create(
